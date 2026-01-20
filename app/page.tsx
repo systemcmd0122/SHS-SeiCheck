@@ -77,9 +77,9 @@ export default function MemberSelectionPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900">
+    <div className="flex flex-col min-h-screen" suppressHydrationWarning>
       {/* ナビゲーションバー */}
-      <div className="border-b-2 border-slate-200 dark:border-slate-800 bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 flex-shrink-0 shadow-sm">
+      <div className="border-b-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 backdrop-blur-sm flex-shrink-0 shadow-sm sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-4 md:py-5 flex items-center justify-between gap-4">
           {/* モバイルハンバーガーとロゴ */}
           <div className="md:hidden flex items-center gap-3">

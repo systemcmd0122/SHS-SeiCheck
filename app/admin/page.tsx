@@ -209,7 +209,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-900" suppressHydrationWarning>
+      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-900">
         <div className="text-center">
           <div className="inline-block mb-4">
             <div className="animate-spin w-12 h-12 border-4 border-slate-300 dark:border-slate-700 border-t-blue-500 rounded-full"></div>
@@ -221,9 +221,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen" suppressHydrationWarning>
       {/* ナビゲーションバー */}
-      <div className="border-b-2 border-border bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 flex-shrink-0 shadow-sm">
+      <div className="border-b-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 backdrop-blur-sm flex-shrink-0 shadow-sm sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-4 md:py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 md:gap-3">
             <Button
@@ -646,7 +646,7 @@ export default function AdminPage() {
 
       {/* 削除確認ダイアログ */}
       <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-slate-800">
           <AlertDialogHeader>
             <AlertDialogTitle>本当にこの日程を削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>

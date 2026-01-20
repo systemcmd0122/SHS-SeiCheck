@@ -63,7 +63,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#3b82f6" />
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 min-h-screen`}>
         <PWARegister />
         <ThemeProvider
           attribute="class"

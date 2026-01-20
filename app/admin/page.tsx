@@ -6,18 +6,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
-  getDocs,
   addDoc,
-  query,
-  orderBy,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, getEventsRealtime, getResponsesRealtime, deleteEventAndResponses } from "@/lib/firebase";
 import { Event, Response, MEMBERS, EventType } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus, Calendar, Users, Download, Filter, Clock, Menu, X } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Users, Download, Filter, Clock, Menu, X, Trash2 } from "lucide-react";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import {
   Sheet,
@@ -47,6 +44,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export default function AdminPage() {
   const router = useRouter();
@@ -69,43 +77,28 @@ export default function AdminPage() {
     eventDate: string;
   } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
+
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const eventsSnapshot = await getDocs(
-        query(collection(db, "events"), orderBy("date", "asc"))
-      );
-      const eventsData = eventsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Event[];
-      setEvents(eventsData);
-
-      const responsesSnapshot = await getDocs(collection(db, "responses"));
-      const responsesData = responsesSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-          history: data.history?.map((h: { changedAt: { toDate: () => Date } }) => ({
-            ...h,
-            changedAt: h.changedAt.toDate(),
-          })) || [],
-        };
-      }) as Response[];
-      setResponses(responsesData);
-    } catch (error) {
-      console.error("[v0] Error fetching data:", error);
-    } finally {
+    setLoading(true);
+    const unsubscribeEvents = getEventsRealtime((events) => {
+      // 日付の降順でソート
+      const sortedEvents = events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setEvents(sortedEvents);
       setLoading(false);
-    }
-  };
+    });
+
+    const unsubscribeResponses = getResponsesRealtime((responses) => {
+      setResponses(responses);
+    });
+
+    // クリーンアップ関数
+    return () => {
+      unsubscribeEvents();
+      unsubscribeResponses();
+    };
+  }, []);
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,11 +123,22 @@ export default function AdminPage() {
       setNewEventDate("");
       setNewEventType("定例会");
       setNewEventDeadline("");
-      await fetchData();
+      // fetchDataは不要
     } catch (error) {
       console.error("[v0] Error adding event:", error);
     } finally {
       setAdding(false);
+    }
+  };
+  
+  const handleDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    try {
+      await deleteEventAndResponses(eventToDelete.id);
+    } catch (error) {
+      console.error("Failed to delete event and responses:", error);
+    } finally {
+      setEventToDelete(null);
     }
   };
 
@@ -205,7 +209,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-900">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="inline-block mb-4">
             <div className="animate-spin w-12 h-12 border-4 border-slate-300 dark:border-slate-700 border-t-blue-500 rounded-full"></div>
@@ -217,9 +221,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900">
+    <div className="flex flex-col min-h-screen">
       {/* ナビゲーションバー */}
-      <div className="border-b-2 border-slate-200 dark:border-slate-800 bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 flex-shrink-0 shadow-sm">
+      <div className="border-b-2 border-border bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 flex-shrink-0 shadow-sm">
         <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-4 md:py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 md:gap-3">
             <Button
@@ -262,7 +266,7 @@ export default function AdminPage() {
 
       {/* モバイルハンバーガーメニュー */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-64 bg-white dark:bg-slate-900">
+        <SheetContent side="left" className="w-64">
           <SheetHeader>
             <SheetTitle className="text-slate-900 dark:text-white">メニュー</SheetTitle>
           </SheetHeader>
@@ -304,7 +308,7 @@ export default function AdminPage() {
         </div>
 
         {/* 新しい日程を追加 */}
-        <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm mb-10 bg-white dark:bg-slate-900">
+        <Card className="overflow-hidden shadow-sm mb-10">
           <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-6">
             <CardTitle className="flex items-center gap-2 text-xl text-slate-900 dark:text-white">
               <Plus className="h-5 w-5" />
@@ -345,7 +349,7 @@ export default function AdminPage() {
                     <SelectTrigger id="eventType" className="border border-slate-200 dark:border-slate-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <SelectContent>
                       <SelectItem value="定例会">定例会</SelectItem>
                       <SelectItem value="行事準備">行事準備</SelectItem>
                       <SelectItem value="本番">本番</SelectItem>
@@ -397,7 +401,7 @@ export default function AdminPage() {
                 return (
                   <div
                     key={event.id}
-                    className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800/50 hover:shadow-md transition-shadow"
+                    className="border border-border rounded-lg p-4 bg-card hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -422,8 +426,19 @@ export default function AdminPage() {
                           )}
                         </div>
                       </div>
-                      <div className="text-right text-sm text-slate-600 dark:text-slate-400">
-                        未回答：<span className="font-semibold text-slate-900 dark:text-white">{unansweredMembers.length}</span>人
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="text-right text-sm text-slate-600 dark:text-slate-400">
+                          未回答：<span className="font-semibold text-slate-900 dark:text-white">{unansweredMembers.length}</span>人
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEventToDelete(event)}
+                          className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          削除
+                        </Button>
                       </div>
                     </div>
                     {unansweredMembers.length > 0 && (
@@ -454,7 +469,7 @@ export default function AdminPage() {
             <SelectTrigger className="w-[150px] border border-slate-200 dark:border-slate-700">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <SelectContent>
               <SelectItem value="all">すべて</SelectItem>
               <SelectItem value="定例会">定例会</SelectItem>
               <SelectItem value="行事準備">行事準備</SelectItem>
@@ -543,7 +558,7 @@ export default function AdminPage() {
       {/* 詳細ダイアログ */}
       {selectedDetail && (
         <Dialog open={!!selectedDetail} onOpenChange={() => setSelectedDetail(null)}>
-          <DialogContent className="w-[95vw] md:max-w-md bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto rounded-lg">
+          <DialogContent className="w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
             <DialogHeader>
               <DialogTitle className="text-slate-900 dark:text-white">
                 出欠詳細
@@ -628,6 +643,22 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* 削除確認ダイアログ */}
+      <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当にこの日程を削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{eventToDelete?.name}」を削除すると、関連するすべての出欠情報も失われます。この操作は元に戻せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEvent}>削除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,17 +1,15 @@
 /* eslint-disable no-undef */
 
-importScripts('https://cdn.jsdelivr.net/npm/workbox-cdn@6.5.4/workbox/workbox-sw.js');
+// このファイルは next-pwa によって生成される sw.js から importScripts() で読み込まれます。
+// そのため、workbox オブジェクトはすでに利用可能な状態です。
 
-// Workboxの初期化
-workbox.setConfig({ debug: false });
-
-// キャッシュ戦略の設定
+// --- キャッシュ戦略 ---
 
 // HTML: Network first
 workbox.routing.registerRoute(
     ({ request }) => request.mode === 'navigate',
     new workbox.strategies.NetworkFirst({
-        cacheName: 'html-cache',
+        cacheName: 'pages-cache', // next-pwaが生成するキャッシュ名と衝突しないように変更
         plugins: [
             new workbox.expiration.ExpirationPlugin({
                 maxEntries: 10,
@@ -25,10 +23,10 @@ workbox.routing.registerRoute(
 workbox.routing.registerRoute(
     ({ request }) => request.destination === 'style' || request.destination === 'script',
     new workbox.strategies.CacheFirst({
-        cacheName: 'static-resources',
+        cacheName: 'static-resources-cache', // next-pwaが生成するキャッシュ名と衝突しないように変更
         plugins: [
             new workbox.expiration.ExpirationPlugin({
-                maxEntries: 30,
+                maxEntries: 32,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
             }),
         ],
@@ -67,7 +65,7 @@ workbox.routing.registerRoute(
 workbox.routing.registerRoute(
     /^https:\/\/(firestore\.googleapis\.com|.*\.firebaseio\.com)\/.*/i,
     new workbox.strategies.NetworkFirst({
-        cacheName: 'firebase-cache',
+        cacheName: 'firebase-api-cache', // next-pwaが生成するキャッシュ名と衝突しないように変更
         networkTimeoutSeconds: 3,
         plugins: [
             new workbox.expiration.ExpirationPlugin({
@@ -80,6 +78,15 @@ workbox.routing.registerRoute(
         ],
     })
 );
+
+
+// --- カスタムロジック ---
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // バックグラウンド同期の設定
 self.addEventListener('sync', (event) => {
@@ -109,8 +116,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
         body: data.body || '通知があります',
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+        icon: '/icon.jpg', // 修正
+        badge: '/icon.jpg', // 修正
         tag: data.tag || 'notification',
         requireInteraction: data.requireInteraction || false,
         actions: [
@@ -148,26 +155,6 @@ self.addEventListener('notificationclick', (event) => {
             if (clients.openWindow) {
                 return clients.openWindow('/');
             }
-        })
-    );
-});
-
-// Service Worker のアクティベーション時にキャッシュをクリーンアップ
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    // 古いキャッシュを削除
-                    if (
-                        !['html-cache', 'static-resources', 'image-cache', 'google-fonts-cache', 'firebase-cache'].includes(
-                            cacheName
-                        )
-                    ) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
         })
     );
 });

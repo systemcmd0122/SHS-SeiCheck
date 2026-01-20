@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { PWAUpdateNotification } from "@/components/pwa-update-notification"
 import PWAInstallPrompt from '@/components/pwa-install-prompt'
 import { PWARegister } from '@/components/pwa-register'
 import './globals.css'
@@ -26,12 +27,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icon.jpg', sizes: 'any' },
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon-192x192.png', sizes: '192x192' },
-      { url: '/icon-512x512.png', sizes: '512x512' },
+      { url: '/icon.jpg' },
     ],
   },
   other: {
@@ -74,6 +72,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <PWAInstallPrompt />
+          <PWAUpdateNotification />
           {children}
         </ThemeProvider>
         <Analytics />

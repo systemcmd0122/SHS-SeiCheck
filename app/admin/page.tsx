@@ -130,7 +130,7 @@ export default function AdminPage() {
       setAdding(false);
     }
   };
-  
+
   const handleDeleteEvent = async () => {
     if (!eventToDelete) return;
     try {
@@ -209,7 +209,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-900" suppressHydrationWarning>
         <div className="text-center">
           <div className="inline-block mb-4">
             <div className="animate-spin w-12 h-12 border-4 border-slate-300 dark:border-slate-700 border-t-blue-500 rounded-full"></div>

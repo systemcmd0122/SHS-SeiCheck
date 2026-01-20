@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MEMBERS, type Event } from "@/lib/types";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore";
-import { Calendar, Clock, LogOut, ChevronRight, Menu, X } from "lucide-react";
+import { Calendar, Clock, LogOut, ChevronRight, Menu, X, Settings } from "lucide-react";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { usePWAUpdate } from "@/hooks/use-pwa-update";
 import {
@@ -20,12 +20,27 @@ import {
 export default function MemberSelectionPage() {
   const router = useRouter();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [confirmingMember, setConfirmingMember] = useState<{ id: string; name: string; committee: string } | null>(null);
   const [nextEvent, setNextEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // PWA更新チェック
   usePWAUpdate();
+
+  // キャッシュされたメンバーをチェック
+  useEffect(() => {
+    const storedMember = localStorage.getItem("selectedMember");
+    if (storedMember) {
+      try {
+        const member = JSON.parse(storedMember);
+        setConfirmingMember({ id: member.id, name: member.name, committee: member.committee });
+      } catch (error) {
+        console.error("Failed to parse cached member:", error);
+        localStorage.removeItem("selectedMember");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchNextEvent = async () => {
@@ -61,7 +76,15 @@ export default function MemberSelectionPage() {
   const handleSelectMember = (memberId: string) => {
     const member = MEMBERS.find((m) => m.id === memberId);
     if (member) {
+      setConfirmingMember({ id: member.id, name: member.name, committee: member.committee });
+    }
+  };
+
+  const handleConfirmMember = (memberId: string) => {
+    const member = MEMBERS.find((m) => m.id === memberId);
+    if (member) {
       localStorage.setItem("selectedMember", JSON.stringify(member));
+      setConfirmingMember(null);
       router.push("/attendance");
     }
   };
@@ -111,11 +134,22 @@ export default function MemberSelectionPage() {
           <div className="hidden md:flex items-center gap-2 md:gap-3">
             <Button
               variant="outline"
-              onClick={() => router.push("/admin")}
-              className="gap-2 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-semibold h-10"
+              onClick={() => router.push("/settings")}
+              className="gap-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold h-10"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="hidden lg:inline">設定</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                localStorage.removeItem("admin_authenticated");
+                router.push("/admin");
+              }}
+              className="gap-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold h-10"
             >
               <LogOut className="h-5 w-5" />
-              <span>管理者</span>
+              <span className="hidden lg:inline">管理者</span>
             </Button>
             <DarkModeToggle />
           </div>
@@ -129,19 +163,30 @@ export default function MemberSelectionPage() {
 
       {/* モバイルメニュー */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-64">
+        <SheetContent side="left" className="w-64 bg-white dark:bg-slate-800">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-left text-lg font-bold text-slate-900 dark:text-white">
               メニュー
             </SheetTitle>
           </SheetHeader>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <Button
               onClick={() => {
+                router.push("/settings");
+                setMobileMenuOpen(false);
+              }}
+              className="justify-start gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+            >
+              <Settings className="h-5 w-5" />
+              <span>設定</span>
+            </Button>
+            <Button
+              onClick={() => {
+                localStorage.removeItem("admin_authenticated");
                 router.push("/admin");
                 setMobileMenuOpen(false);
               }}
-              className="justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10"
+              className="justify-start gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
             >
               <LogOut className="h-5 w-5" />
               <span>管理者ページ</span>
@@ -155,38 +200,38 @@ export default function MemberSelectionPage() {
         {/* 次の予定セクション */}
         {!loading && nextEvent && (
           <div className="mb-8 md:mb-12">
-            <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
+            <div className="inline-flex items-center gap-2 mb-3 md:mb-4 px-3 md:px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Calendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400">次の予定</span>
+              <span className="text-xs md:text-sm font-bold text-blue-700 dark:text-blue-400">次の予定</span>
             </div>
-            <Card className="overflow-hidden border-0 shadow-md bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800/50">
-              <CardContent className="p-4 md:p-6 lg:p-8">
+            <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800/60 dark:to-slate-800/40">
+              <CardContent className="p-5 md:p-6 lg:p-8">
                 <div className="flex items-start justify-between gap-3 md:gap-4 mb-4 md:mb-6">
                   <div>
                     <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2 line-clamp-2">
                       {nextEvent.name}
                     </h2>
-                    <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-xs md:text-sm text-slate-600 dark:text-slate-500 font-medium">
                       {nextEvent.type}
                     </p>
                   </div>
                 </div>
                 <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
-                  <div className="flex gap-2 md:gap-3">
-                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex gap-2 md:gap-3 bg-white dark:bg-slate-900/30 rounded-lg p-3 md:p-4">
+                    <Calendar className="h-5 w-5 md:h-6 md:w-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-0.5">開催日時</p>
-                      <p className="text-xs md:text-sm font-semibold text-slate-900 dark:text-white">
+                      <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
                         {formatDate(nextEvent.date)}
                       </p>
                     </div>
                   </div>
                   {nextEvent.deadline && (
-                    <div className="flex gap-2 md:gap-3">
-                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex gap-2 md:gap-3 bg-white dark:bg-slate-900/30 rounded-lg p-3 md:p-4">
+                      <Clock className="h-5 w-5 md:h-6 md:w-6 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-0.5">回答期限</p>
-                        <p className="text-xs md:text-sm font-semibold text-slate-900 dark:text-white">
+                        <p className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
                           {formatDate(nextEvent.deadline)}
                         </p>
                       </div>
@@ -199,41 +244,99 @@ export default function MemberSelectionPage() {
         )}
 
         {/* メンバー選択セクション */}
-        <div>
-          <div className="mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
-              出欠を回答
-            </h2>
-            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-1">
-              自分の名前をタップしてください
-            </p>
-          </div>
-          <div className="grid gap-2 md:gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {MEMBERS.map((member) => (
-              <button
-                key={member.id}
-                onClick={() => {
-                  setSelectedMember(member.id);
-                  handleSelectMember(member.id);
-                }}
-                className="group relative p-3 md:p-4 text-left transition-all duration-200 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 active:scale-95"
-              >
-                <div className="flex items-start justify-between mb-2 md:mb-3">
-                  <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-white">{member.name.charAt(0)}</span>
+        {!confirmingMember && (
+          <div>
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                出欠を回答
+              </h2>
+              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                あなたの名前をタップして、出欠状況を入力してください
+              </p>
+            </div>
+            <div className="grid gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {MEMBERS.map((member) => (
+                <button
+                  key={member.id}
+                  onClick={() => {
+                    setSelectedMember(member.id);
+                    handleSelectMember(member.id);
+                  }}
+                  className="group relative p-4 md:p-5 text-left transition-all duration-200 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <div className="flex items-start justify-between mb-3 md:mb-4">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
+                      <span className="text-sm md:text-base font-bold text-white">{member.name.charAt(0)}</span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all group-hover:translate-x-1" />
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-all group-hover:translate-x-0.5" />
-                </div>
-                <div className="font-semibold text-slate-900 dark:text-white text-xs md:text-sm mb-0.5 md:mb-1 line-clamp-1">
-                  {member.name}
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                  {member.committee}
-                </div>
-              </button>
-            ))}
+                  <div className="font-semibold text-slate-900 dark:text-white text-sm md:text-base mb-1">
+                    {member.name}
+                  </div>
+                  <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    {member.committee}
+                  </div>
+                  <div className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs font-semibold">
+                    <span>タップして回答</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* メンバー確認セクション */}
+        {confirmingMember && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                出欠者確認
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                この情報でよろしいですか？
+              </p>
+            </div>
+            <Card className="overflow-hidden border border-slate-200 dark:border-slate-800 shadow-lg">
+              <CardContent className="p-6 md:p-8">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <span className="text-4xl font-bold text-white">{confirmingMember.name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                        {confirmingMember.name}
+                      </div>
+                      <div className="text-base text-slate-600 dark:text-slate-400">
+                        {confirmingMember.committee}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-700 dark:text-blue-400 font-semibold">
+                      この名前で出欠情報を入力します
+                    </p>
+                  </div>
+                  <div className="space-y-3 pt-6">
+                    <Button
+                      onClick={() => confirmingMember && handleConfirmMember(confirmingMember.id)}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold h-12 text-base"
+                    >
+                      このメンバーで続行
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setConfirmingMember(null)}
+                      className="w-full border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold h-12 text-base"
+                    >
+                      別のメンバーを選択
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

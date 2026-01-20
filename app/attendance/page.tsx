@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, User, Clock, CheckCircle2, XCircle, AlertCircle, Menu, X } from "lucide-react";
+import { ArrowLeft, Calendar, User, Clock, CheckCircle2, XCircle, AlertCircle, Menu, X, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import {
@@ -191,8 +191,26 @@ export default function AttendancePage() {
           <div className="hidden md:flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/settings")}
+              className="gap-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold h-10"
+            >
+              <Settings className="h-5 w-5" />
+              <span>設定</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                localStorage.removeItem("selectedMember");
+                router.push("/");
+              }}
               className="gap-2 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-semibold h-10"
+            >
+              <span>メンバー変更</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/")}
+              className="gap-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold h-10"
             >
               <ArrowLeft className="h-5 w-5" />
               <span>戻る</span>
@@ -211,19 +229,39 @@ export default function AttendancePage() {
 
       {/* モバイルメニュー */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-64">
+        <SheetContent side="left" className="w-64 bg-white dark:bg-slate-800">
           <SheetHeader className="mb-6">
             <SheetTitle className="text-left text-lg font-bold text-slate-900 dark:text-white">
               メニュー
             </SheetTitle>
           </SheetHeader>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={() => {
+                router.push("/settings");
+                setMobileMenuOpen(false);
+              }}
+              className="justify-start gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+            >
+              <Settings className="h-5 w-5" />
+              <span>設定</span>
+            </Button>
+            <Button
+              onClick={() => {
+                localStorage.removeItem("selectedMember");
+                router.push("/");
+                setMobileMenuOpen(false);
+              }}
+              className="justify-start gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-semibold"
+            >
+              <span>メンバー変更</span>
+            </Button>
             <Button
               onClick={() => {
                 router.push("/");
                 setMobileMenuOpen(false);
               }}
-              className="justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10"
+              className="justify-start gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
             >
               <ArrowLeft className="h-5 w-5" />
               <span>ホームに戻る</span>
@@ -342,109 +380,111 @@ export default function AttendancePage() {
                       </div>
                     )}
 
-                    <div className="space-y-4">
-                      <p className="text-sm font-semibold text-foreground">ステータス選択</p>
-                      <RadioGroup
-                        value={response?.status || ""}
-                        onValueChange={(value) =>
-                          isEditable &&
-                          handleResponseChange(
-                            event.id,
-                            value as "参加" | "遅れる" | "不参加",
-                            response?.reason
-                          )
-                        }
-                        disabled={!isEditable}
-                      >
-                        <div className="space-y-2 md:space-y-3">
-                          <div className="flex items-center space-x-3 md:space-x-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 md:p-4 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-all duration-200">
-                            <RadioGroupItem
-                              value="参加"
-                              id={`${event.id}-attend`}
-                              disabled={!isEditable}
-                            />
-                            <Label
-                              htmlFor={`${event.id}-attend`}
-                              className={`flex-1 font-medium text-slate-900 dark:text-white text-sm md:text-base ${isEditable ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
-                            >
-                              参加
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-3 md:space-x-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 md:p-4 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-all duration-200">
-                            <RadioGroupItem
-                              value="遅れる"
-                              id={`${event.id}-late`}
-                              disabled={!isEditable}
-                            />
-                            <Label
-                              htmlFor={`${event.id}-late`}
-                              className={`flex-1 font-medium text-slate-900 dark:text-white text-sm md:text-base ${isEditable ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
-                            >
-                              遅れる
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-3 md:space-x-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 md:p-4 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-all duration-200">
-                            <RadioGroupItem
-                              value="不参加"
-                              id={`${event.id}-absent`}
-                              disabled={!isEditable}
-                            />
-                            <Label
-                              htmlFor={`${event.id}-absent`}
-                              className={`flex-1 font-medium text-slate-900 dark:text-white text-sm md:text-base ${isEditable ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
-                            >
-                              不参加
-                            </Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm md:text-base font-bold text-slate-900 dark:text-white">ステータス</p>
+                        {response?.status && (
+                          <Badge className={`text-xs md:text-sm font-semibold ${response.status === "参加"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : response.status === "遅れる"
+                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                              : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            }`}>
+                            {response.status}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 md:gap-3">
+                        <Button
+                          onClick={() =>
+                            isEditable &&
+                            handleResponseChange(
+                              event.id,
+                              "参加",
+                              response?.reason
+                            )
+                          }
+                          disabled={!isEditable}
+                          className={`py-3 md:py-4 px-2 md:px-4 font-semibold text-sm md:text-base transition-all ${response?.status === "参加"
+                            ? "bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                            : "bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30"
+                            } rounded-lg disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          参加
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            isEditable &&
+                            handleResponseChange(
+                              event.id,
+                              "遅れる",
+                              response?.reason
+                            )
+                          }
+                          disabled={!isEditable}
+                          className={`py-3 md:py-4 px-2 md:px-4 font-semibold text-sm md:text-base transition-all ${response?.status === "遅れる"
+                            ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                            : "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                            } rounded-lg disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          遅れる
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            isEditable &&
+                            handleResponseChange(
+                              event.id,
+                              "不参加",
+                              response?.reason
+                            )
+                          }
+                          disabled={!isEditable}
+                          className={`py-3 md:py-4 px-2 md:px-4 font-semibold text-sm md:text-base transition-all ${response?.status === "不参加"
+                            ? "bg-red-600 hover:bg-red-700 text-white shadow-lg"
+                            : "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                            } rounded-lg disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          不参加
+                        </Button>
+                      </div>
 
                       {response?.status && response.status !== "参加" && (
-                        <>
-                          <div className="space-y-2 border-t border-slate-200 dark:border-slate-700 pt-3 md:pt-4">
-                            <Label htmlFor={`${event.id}-reason`} className="text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 p-3 md:p-4 space-y-3 md:space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`${event.id}-reason`} className="text-sm md:text-base font-bold text-slate-900 dark:text-white block">
                               理由（任意）
                             </Label>
-                            <div className="mb-2 md:mb-3 flex flex-wrap gap-1 md:gap-2">
-                              {REASON_TEMPLATES.map((template) => (
-                                <Button
-                                  key={template}
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReasonTemplateClick(event.id, template)}
-                                  disabled={!isEditable}
-                                  className="text-xs md:text-sm h-8 md:h-9"
-                                >
-                                  {template}
-                                </Button>
-                              ))}
-                            </div>
-                            <Textarea
-                              id={`${event.id}-reason`}
-                              placeholder="理由を入力してください"
-                              value={response.reason || ""}
-                              onChange={(e) =>
-                                isEditable &&
-                                handleResponseChange(
-                                  event.id,
-                                  response.status!,
-                                  e.target.value
-                                )
-                              }
-                              disabled={!isEditable}
-                              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm min-h-20"
-                            />
+                            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400">下記から選択するか、自由に入力できます</p>
                           </div>
-
-                          <div className="flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 p-2 md:p-3 text-xs md:text-sm font-medium text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
-                            <CheckCircle2 className="h-4 md:h-5 w-4 md:w-5 flex-shrink-0" />
-                            <span>
-                              回答済み：<span className="font-bold">{response.status}</span>
-                            </span>
-                            {!isEditable && <span className="text-xs">（締切後のため編集不可）</span>}
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
+                            {REASON_TEMPLATES.map((template) => (
+                              <Button
+                                key={template}
+                                type="button"
+                                onClick={() => handleReasonTemplateClick(event.id, template)}
+                                disabled={!isEditable}
+                                className="text-xs md:text-sm py-1.5 md:py-2 px-2 md:px-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 rounded-md font-medium"
+                              >
+                                {template}
+                              </Button>
+                            ))}
                           </div>
-                        </>
+                          <Textarea
+                            id={`${event.id}-reason`}
+                            placeholder="理由を入力してください（例：体調不良など）"
+                            value={response.reason || ""}
+                            onChange={(e) =>
+                              isEditable &&
+                              handleResponseChange(
+                                event.id,
+                                response.status!,
+                                e.target.value
+                              )
+                            }
+                            disabled={!isEditable}
+                            className="rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20 disabled:opacity-60 disabled:cursor-not-allowed min-h-24 resize-none"
+                          />
+                        </div>
                       )}
                     </div>
                   </CardContent>

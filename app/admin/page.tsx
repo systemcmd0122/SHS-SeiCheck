@@ -45,6 +45,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -58,6 +63,11 @@ import {
 
 export default function AdminPage() {
   const router = useRouter();
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const ADMIN_PASSWORD = "735657";
+
   const [events, setEvents] = useState<Event[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +89,88 @@ export default function AdminPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
 
+  // パスワード認証チェック
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("admin_authenticated") === "true";
+    setAuthenticated(isAuthenticated);
+    if (!isAuthenticated) {
+      setLoading(false);
+    }
+  }, []);
+
+  const handlePasswordSubmit = () => {
+    if (password === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      localStorage.setItem("admin_authenticated", "true");
+      setPassword("");
+      setPasswordError(false);
+      setLoading(true);
+    } else {
+      setPasswordError(true);
+      setPassword("");
+    }
+  };
+
+  // 全角→半角変換
+  const convertToHalfWidth = (value: string) => {
+    return value
+      .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0))
+      .replace(/[ー]/g, "-");
+  };
+
+  const handlePasswordChange = (value: string) => {
+    const halfWidthValue = convertToHalfWidth(value);
+    setPassword(halfWidthValue);
+    if (passwordError) setPasswordError(false);
+  };
+
+  const handlePasswordComplete = (value: string) => {
+    const halfWidthValue = convertToHalfWidth(value);
+    if (halfWidthValue === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      localStorage.setItem("admin_authenticated", "true");
+      setPassword("");
+      setPasswordError(false);
+      setLoading(true);
+    }
+  };
+
+  const handleNumpadClick = (digit: string) => {
+    const newPassword = password + digit;
+    if (newPassword.length <= 6) {
+      setPassword(newPassword);
+      if (passwordError) setPasswordError(false);
+      if (newPassword.length === 6) {
+        if (newPassword === ADMIN_PASSWORD) {
+          setAuthenticated(true);
+          localStorage.setItem("admin_authenticated", "true");
+          setPassword("");
+          setPasswordError(false);
+          setLoading(true);
+        } else {
+          setPasswordError(true);
+          setPassword("");
+        }
+      }
+    }
+  };
+
+  const handleNumpadDelete = () => {
+    setPassword(password.slice(0, -1));
+  };
+
+  // Hooksはここで実行（認証前に必ず実行される）
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("admin_authenticated") === "true";
+    setAuthenticated(isAuthenticated);
+    if (!isAuthenticated) {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    if (!authenticated) return;
+
     setLoading(true);
     const unsubscribeEvents = getEventsRealtime((events) => {
       // 日付の降順でソート
@@ -98,7 +188,110 @@ export default function AdminPage() {
       unsubscribeEvents();
       unsubscribeResponses();
     };
-  }, []);
+  }, [authenticated]);
+
+  // 認証されていない場合はパスワード入力画面を表示
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen w-full bg-white dark:bg-slate-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white text-center">
+              管理者パスワード
+            </CardTitle>
+            <CardDescription className="text-center text-slate-600 dark:text-slate-400">
+              管理画面にアクセスするにはパスワードが必要です
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <Label className="text-slate-700 dark:text-slate-300 font-semibold">
+                パスワード（6桁の数字）
+              </Label>
+
+              {/* PC用：InputOTP */}
+              <div className="hidden md:flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  value={password}
+                  onChange={handlePasswordChange}
+                  onComplete={handlePasswordComplete}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              {/* モバイル用：パスワード表示 */}
+              <div className="md:hidden flex justify-center">
+                <div className="text-2xl font-bold tracking-widest text-center text-slate-900 dark:text-white min-h-12 flex items-center">
+                  {password.length > 0 ? "●".repeat(password.length) : "　"}
+                </div>
+              </div>
+
+              {/* モバイル用：数字盤 */}
+              <div className="md:hidden grid grid-cols-3 gap-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+                  <button
+                    key={digit}
+                    onClick={() => handleNumpadClick(digit.toString())}
+                    disabled={password.length >= 6}
+                    className="p-4 text-xl font-bold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-600"
+                  >
+                    {digit}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleNumpadClick("0")}
+                  disabled={password.length >= 6}
+                  className="col-span-3 p-4 text-xl font-bold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 dark:border-slate-600"
+                >
+                  0
+                </button>
+              </div>
+
+              {/* 削除ボタン（モバイル用） */}
+              <div className="md:hidden">
+                <Button
+                  onClick={handleNumpadDelete}
+                  variant="outline"
+                  className="w-full border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+                >
+                  削除
+                </Button>
+              </div>
+
+              {passwordError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-center font-semibold">
+                  パスワードが正しくありません
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={handlePasswordSubmit}
+              disabled={password.length !== 6}
+              className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white font-semibold h-10"
+            >
+              アクセス
+            </Button>
+            <Button
+              onClick={() => router.push("/")}
+              variant="outline"
+              className="w-full border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold"
+            >
+              ホームに戻る
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +392,37 @@ export default function AdminPage() {
     document.body.removeChild(link);
   };
 
+  const exportEventToCSV = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+
+    const headers = ["メンバー", "委員会", "状態", "理由"];
+    const rows = MEMBERS.map((member) => {
+      const response = getResponseForMemberAndEvent(member.id, eventId);
+      return [
+        member.name,
+        member.committee,
+        response?.status || "未回答",
+        response?.reason || "",
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `出欠表_${event.name}_${event.date}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredEvents = filterEventType === "all"
     ? events
     : events.filter((e) => e.type === filterEventType);
@@ -206,6 +430,16 @@ export default function AdminPage() {
   const displayedMembers = showOnlyUnanswered && selectedEventId
     ? getUnansweredMembers(selectedEventId)
     : MEMBERS;
+
+  const getEventStats = (eventId: string) => {
+    const eventResponses = responses.filter((r) => r.eventId === eventId);
+    const attended = eventResponses.filter((r) => r.status === "参加").length;
+    const late = eventResponses.filter((r) => r.status === "遅れる").length;
+    const absent = eventResponses.filter((r) => r.status === "不参加").length;
+    const unanswered = MEMBERS.length - eventResponses.length;
+    const total = MEMBERS.length;
+    return { attended, late, absent, unanswered, total, responded: eventResponses.length };
+  };
 
   if (loading) {
     return (
@@ -266,7 +500,7 @@ export default function AdminPage() {
 
       {/* モバイルハンバーガーメニュー */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-64">
+        <SheetContent side="left" className="w-64 bg-white dark:bg-slate-800">
           <SheetHeader>
             <SheetTitle className="text-slate-900 dark:text-white">メニュー</SheetTitle>
           </SheetHeader>
@@ -307,6 +541,90 @@ export default function AdminPage() {
           </p>
         </div>
 
+        {/* 全体統計ダッシュボード */}
+        {events.length > 0 && (
+          <Card className="overflow-hidden shadow-sm mb-10 border border-slate-200 dark:border-slate-800">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-slate-800/50 dark:to-slate-800/50 p-6">
+              <CardTitle className="flex items-center gap-2 text-xl text-slate-900 dark:text-white">
+                <Users className="h-5 w-5" />
+                出欠統計ダッシュボード
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {selectedEventId && (
+                (() => {
+                  const event = events.find((e) => e.id === selectedEventId);
+                  const stats = getEventStats(selectedEventId);
+                  if (!event) return null;
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{event.name}</h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{event.date}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportEventToCSV(selectedEventId)}
+                            className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
+                          >
+                            <Download className="h-4 w-4" />
+                            <span className="hidden sm:inline">CSV</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedEventId(null)}
+                            className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            クリア
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                        <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-green-50 dark:bg-green-900/20 p-4">
+                          <div className="text-3xl font-bold text-green-700 dark:text-green-400">{stats.attended}</div>
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2">参加</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">({Math.round(stats.attended / stats.total * 100)}%)</div>
+                        </div>
+                        <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-blue-50 dark:bg-blue-900/20 p-4">
+                          <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">{stats.late}</div>
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2">遅れる</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">({Math.round(stats.late / stats.total * 100)}%)</div>
+                        </div>
+                        <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-red-50 dark:bg-red-900/20 p-4">
+                          <div className="text-3xl font-bold text-red-700 dark:text-red-400">{stats.absent}</div>
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2">不参加</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">({Math.round(stats.absent / stats.total * 100)}%)</div>
+                        </div>
+                        <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+                          <div className="text-3xl font-bold text-amber-700 dark:text-amber-400">{stats.unanswered}</div>
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2">未回答</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">({Math.round(stats.unanswered / stats.total * 100)}%)</div>
+                        </div>
+                        <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700 p-4">
+                          <div className="text-3xl font-bold text-slate-900 dark:text-white">{stats.responded}/{stats.total}</div>
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2">回答率</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">({Math.round(stats.responded / stats.total * 100)}%)</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+              {!selectedEventId && (
+                <div className="text-center py-8 text-slate-600 dark:text-slate-400">
+                  <Calendar className="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm">下のイベント一覧からイベントを選択して統計を表示します</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* 新しい日程を追加 */}
         <Card className="overflow-hidden shadow-sm mb-10">
           <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-6">
@@ -322,7 +640,7 @@ export default function AdminPage() {
                   <Label htmlFor="eventName" className="text-sm font-semibold text-slate-900 dark:text-white">日程名</Label>
                   <Input
                     id="eventName"
-                    placeholder="例：第1回定例会議"
+                    placeholder="例:第1回定例会議"
                     value={newEventName}
                     onChange={(e) => setNewEventName(e.target.value)}
                     required
@@ -359,7 +677,7 @@ export default function AdminPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="eventDeadline" className="text-sm font-semibold text-slate-900 dark:text-white">回答締切（任意）</Label>
+                  <Label htmlFor="eventDeadline" className="text-sm font-semibold text-slate-900 dark:text-white">回答締切(任意)</Label>
                   <Input
                     id="eventDeadline"
                     type="datetime-local"
@@ -382,7 +700,28 @@ export default function AdminPage() {
 
         {/* 登録済み日程一覧 */}
         <div className="mt-8 md:mt-10">
-          <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">登録済み日程</h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">登録済み日程</h2>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">イベント種別</label>
+              <Select
+                value={filterEventType}
+                onValueChange={(value) => setFilterEventType(value as EventType | "all")}
+              >
+                <SelectTrigger className="w-[140px] border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">すべて</SelectItem>
+                  <SelectItem value="定例会">定例会</SelectItem>
+                  <SelectItem value="行事準備">行事準備</SelectItem>
+                  <SelectItem value="本番">本番</SelectItem>
+                  <SelectItem value="臨時集会">臨時集会</SelectItem>
+                  <SelectItem value="その他">その他</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
               <Calendar className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
@@ -401,7 +740,8 @@ export default function AdminPage() {
                 return (
                   <div
                     key={event.id}
-                    className="border border-border rounded-lg p-4 bg-card hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedEventId(event.id)}
+                    className="border border-border rounded-lg p-4 bg-card hover:shadow-md transition-all cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
@@ -412,7 +752,7 @@ export default function AdminPage() {
                           </Badge>
                           {deadlineStats?.isPassed && deadlineStats.unansweredCount > 0 && (
                             <Badge className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium">
-                              締切超過：{deadlineStats.unansweredCount}人
+                              締切超過:{deadlineStats.unansweredCount}人
                             </Badge>
                           )}
                         </div>
@@ -421,19 +761,22 @@ export default function AdminPage() {
                           {event.deadline && (
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              締切：{event.deadline}
+                              締切:{event.deadline}
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <div className="text-right text-sm text-slate-600 dark:text-slate-400">
-                          未回答：<span className="font-semibold text-slate-900 dark:text-white">{unansweredMembers.length}</span>人
+                          未回答:<span className="font-semibold text-slate-900 dark:text-white">{unansweredMembers.length}</span>人
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setEventToDelete(event)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEventToDelete(event);
+                          }}
                           className="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
@@ -443,7 +786,7 @@ export default function AdminPage() {
                     </div>
                     {unansweredMembers.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">未回答者：</div>
+                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">未回答者:</div>
                         <div className="flex flex-wrap gap-1">
                           {unansweredMembers.map((member) => (
                             <Badge key={member.id} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs">
@@ -460,71 +803,51 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* フィルター */}
-        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-          <Select
-            value={filterEventType}
-            onValueChange={(value) => setFilterEventType(value as EventType | "all")}
-          >
-            <SelectTrigger className="w-[150px] border border-slate-200 dark:border-slate-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">すべて</SelectItem>
-              <SelectItem value="定例会">定例会</SelectItem>
-              <SelectItem value="行事準備">行事準備</SelectItem>
-              <SelectItem value="本番">本番</SelectItem>
-              <SelectItem value="臨時集会">臨時集会</SelectItem>
-              <SelectItem value="その他">その他</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* 出欠状況一覧 */}
-        <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-3 md:mb-4">出欠状況一覧</h2>
+        <div className="mt-10 md:mt-12">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-4 md:mb-6">出欠状況詳細</h2>
 
-        {events.length === 0 ? (
-          <div className="py-8 text-center text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-            日程が登録されていないため、出欠状況を表示できません
-          </div>
-        ) : displayedMembers.length === 0 ? (
-          <div className="py-8 text-center text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-            すべてのメンバーが回答済みです
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
-            <Table className="text-sm md:text-base">
-              <TableHeader>
-                <TableRow className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                  <TableHead className="w-[120px] md:w-[180px] font-semibold text-slate-900 dark:text-white text-xs md:text-sm">メンバー</TableHead>
-                  {events.map((event) => (
-                    <TableHead key={event.id} className="text-center font-semibold text-slate-900 dark:text-white text-xs md:text-sm whitespace-nowrap px-2">
-                      <div className="mb-0.5 md:mb-1">{event.name}</div>
-                      <div className="text-xs font-normal text-slate-600 dark:text-slate-400">{event.type}</div>
-                      <div className="text-xs font-normal text-slate-600 dark:text-slate-400 hidden md:block">{event.date}</div>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayedMembers.map((member) => (
-                  <TableRow key={member.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                    <TableCell className="font-medium text-slate-900 dark:text-white text-xs md:text-sm">
-                      <div className="line-clamp-1">{member.name}</div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400 hidden md:block">{member.committee}</div>
-                    </TableCell>
-                    {events.map((event) => {
-                      const response = getResponseForMemberAndEvent(member.id, event.id);
-                      return (
-                        <TableCell
-                          key={event.id}
-                          className="text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors px-1 md:px-3"
-                          onClick={() => setSelectedDetail({ memberId: member.id, memberName: member.name, eventId: event.id, eventName: event.name, eventDate: event.date })}
-                        >
-                          {response ? (
-                            <div className="flex flex-col items-center gap-0.5 md:gap-1">
+          {events.length === 0 ? (
+            <div className="py-8 text-center text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+              日程が登録されていないため、出欠状況を表示できません
+            </div>
+          ) : displayedMembers.length === 0 ? (
+            <div className="py-8 text-center text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+              すべてのメンバーが回答済みです
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+              <Table className="text-sm md:text-base">
+                <TableHeader>
+                  <TableRow className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                    <TableHead className="w-[120px] md:w-[180px] font-semibold text-slate-900 dark:text-white text-xs md:text-sm">メンバー</TableHead>
+                    {events.map((event) => (
+                      <TableHead key={event.id} className="text-center font-semibold text-slate-900 dark:text-white text-xs md:text-sm whitespace-nowrap px-2">
+                        <div className="mb-0.5 md:mb-1">{event.name}</div>
+                        <div className="text-xs font-normal text-slate-600 dark:text-slate-400">{event.type}</div>
+                        <div className="text-xs font-normal text-slate-600 dark:text-slate-400 hidden md:block">{event.date}</div>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayedMembers.map((member) => (
+                    <TableRow key={member.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                      <TableCell className="font-medium text-slate-900 dark:text-white text-xs md:text-sm">
+                        <div className="line-clamp-1">{member.name}</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400 hidden md:block">{member.committee}</div>
+                      </TableCell>
+                      {events.map((event) => {
+                        const response = getResponseForMemberAndEvent(member.id, event.id);
+                        return (
+                          <TableCell
+                            key={event.id}
+                            className="text-center cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors py-2 md:py-3 px-2"
+                            onClick={() => setSelectedDetail({ memberId: member.id, memberName: member.name, eventId: event.id, eventName: event.name, eventDate: event.date })}
+                          >
+                            {response ? (
                               <span
-                                className={`inline-flex items-center rounded-full px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-semibold whitespace-nowrap ${response.status === "参加"
+                                className={`inline-flex items-center rounded-md px-2 py-1 text-xs md:text-sm font-semibold whitespace-nowrap ${response.status === "参加"
                                   ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                                   : response.status === "遅れる"
                                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
@@ -533,132 +856,127 @@ export default function AdminPage() {
                               >
                                 {response.status}
                               </span>
-                              {response.reason && (
-                                <span className="max-w-[80px] md:max-w-[120px] truncate text-xs text-slate-600 dark:text-slate-400 hidden md:inline" title={response.reason}>
-                                  {response.reason}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-slate-200 dark:bg-slate-700 px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                              未回答
-                            </span>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
-
-      {/* 詳細ダイアログ */}
-      {selectedDetail && (
-        <Dialog open={!!selectedDetail} onOpenChange={() => setSelectedDetail(null)}>
-          <DialogContent className="w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
-            <DialogHeader>
-              <DialogTitle className="text-slate-900 dark:text-white">
-                出欠詳細
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 md:space-y-4">
-              <div>
-                <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">メンバー</div>
-                <div className="text-sm md:text-base font-medium text-slate-900 dark:text-white">
-                  {selectedDetail.memberName}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">日程</div>
-                <div className="text-sm md:text-base font-medium text-slate-900 dark:text-white">
-                  {selectedDetail.eventName}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400">{selectedDetail.eventDate}</div>
-              </div>
-              {(() => {
-                const response = getResponseForMemberAndEvent(selectedDetail.memberId, selectedDetail.eventId);
-                if (!response) {
-                  return (
-                    <div>
-                      <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">出欠状況</div>
-                      <div className="inline-flex items-center rounded-full bg-slate-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        未回答
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <>
-                    <div>
-                      <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">出欠状況</div>
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${response.status === "参加"
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                          : response.status === "遅れる"
-                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                          }`}
-                      >
-                        {response.status}
-                      </span>
-                    </div>
-                    {response.reason && (
-                      <div>
-                        <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">理由</div>
-                        <div className="text-xs md:text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-2 md:p-3 rounded border border-slate-200 dark:border-slate-700">
-                          {response.reason}
-                        </div>
-                      </div>
-                    )}
-                    {response.updatedAt && (
-                      <div>
-                        <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">回答日時</div>
-                        <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                          {new Date(response.updatedAt).toLocaleString("ja-JP")}
-                        </div>
-                      </div>
-                    )}
-                    {response.history && response.history.length > 0 && (
-                      <div>
-                        <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">変更履歴</div>
-                        <div className="space-y-1 md:space-y-2">
-                          {response.history.map((entry: any, idx: number) => (
-                            <div key={idx} className="text-xs bg-slate-50 dark:bg-slate-800/50 p-1.5 md:p-2 rounded border border-slate-200 dark:border-slate-700">
-                              <div className="font-semibold text-slate-900 dark:text-white text-xs">{entry.status}</div>
-                              <div className="text-slate-600 dark:text-slate-400 text-xs">
-                                {new Date(entry.changedAt).toLocaleString("ja-JP")}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                            ) : (
+                              <span className="inline-flex items-center rounded-md bg-slate-200 dark:bg-slate-700 px-2 py-1 text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                未回答
+                              </span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </div>
 
-      {/* 削除確認ダイアログ */}
-      <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
-        <AlertDialogContent className="bg-white dark:bg-slate-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle>本当にこの日程を削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              「{eventToDelete?.name}」を削除すると、関連するすべての出欠情報も失われます。この操作は元に戻せません。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteEvent}>削除</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* 詳細ダイアログ */}
+        {selectedDetail && (
+          <Dialog open={!!selectedDetail} onOpenChange={() => setSelectedDetail(null)}>
+            <DialogContent className="w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white dark:bg-slate-800">
+              <DialogHeader>
+                <DialogTitle className="text-slate-900 dark:text-white">
+                  出欠詳細
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 md:space-y-4">
+                <div>
+                  <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">メンバー</div>
+                  <div className="text-sm md:text-base font-medium text-slate-900 dark:text-white">
+                    {selectedDetail.memberName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">日程</div>
+                  <div className="text-sm md:text-base font-medium text-slate-900 dark:text-white">
+                    {selectedDetail.eventName}
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">{selectedDetail.eventDate}</div>
+                </div>
+                {(() => {
+                  const response = getResponseForMemberAndEvent(selectedDetail.memberId, selectedDetail.eventId);
+                  if (!response) {
+                    return (
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">出欠状況</div>
+                        <div className="inline-flex items-center rounded-full bg-slate-200 dark:bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          未回答
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <>
+                      <div>
+                        <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">出欠状況</div>
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${response.status === "参加"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : response.status === "遅れる"
+                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                              : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                          {response.status}
+                        </span>
+                      </div>
+                      {response.reason && (
+                        <div>
+                          <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">理由</div>
+                          <div className="text-xs md:text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 p-2 md:p-3 rounded border border-slate-200 dark:border-slate-700">
+                            {response.reason}
+                          </div>
+                        </div>
+                      )}
+                      {response.updatedAt && (
+                        <div>
+                          <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">回答日時</div>
+                          <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                            {new Date(response.updatedAt).toLocaleString("ja-JP")}
+                          </div>
+                        </div>
+                      )}
+                      {response.history && response.history.length > 0 && (
+                        <div>
+                          <div className="text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">変更履歴</div>
+                          <div className="space-y-1 md:space-y-2">
+                            {response.history.map((entry: any, idx: number) => (
+                              <div key={idx} className="text-xs bg-slate-50 dark:bg-slate-800/50 p-1.5 md:p-2 rounded border border-slate-200 dark:border-slate-700">
+                                <div className="font-semibold text-slate-900 dark:text-white text-xs">{entry.status}</div>
+                                <div className="text-slate-600 dark:text-slate-400 text-xs">
+                                  {new Date(entry.changedAt).toLocaleString("ja-JP")}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* 削除確認ダイアログ */}
+        <AlertDialog open={!!eventToDelete} onOpenChange={() => setEventToDelete(null)}>
+          <AlertDialogContent className="bg-white dark:bg-slate-800">
+            <AlertDialogHeader>
+              <AlertDialogTitle>本当にこの日程を削除しますか?</AlertDialogTitle>
+              <AlertDialogDescription>
+                「{eventToDelete?.name}」を削除すると、関連するすべての出欠情報も失われます。この操作は元に戻せません。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>キャンセル</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteEvent}>削除</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }

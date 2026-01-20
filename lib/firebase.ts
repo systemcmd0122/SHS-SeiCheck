@@ -1,14 +1,14 @@
 import { initializeApp, getApps } from "firebase/app";
-import { 
-  getFirestore, 
-  collection, 
-  onSnapshot, 
-  doc, 
-  deleteDoc, 
-  writeBatch, 
-  query, 
-  where, 
-  getDocs 
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  doc,
+  deleteDoc,
+  writeBatch,
+  query,
+  where,
+  getDocs
 } from "firebase/firestore";
 import { Event, Response } from "./types";
 
@@ -81,6 +81,27 @@ export const deleteEventAndResponses = async (eventId: string) => {
   batch.delete(eventDoc);
 
   await batch.commit();
+};
+
+// 特定の回答を削除する関数
+export const deleteResponse = async (responseId: string) => {
+  const responseDoc = doc(db, 'responses', responseId);
+  await deleteDoc(responseDoc);
+};
+
+// メンバーの特定のイベントの回答を削除する関数
+export const deleteResponseByMemberAndEvent = async (memberId: string, eventId: string) => {
+  const responsesQuery = query(
+    collection(db, 'responses'),
+    where('memberId', '==', memberId),
+    where('eventId', '==', eventId)
+  );
+  const responsesSnapshot = await getDocs(responsesQuery);
+
+  if (responsesSnapshot.docs.length > 0) {
+    const responseDoc = responsesSnapshot.docs[0];
+    await deleteDoc(responseDoc.ref);
+  }
 };
 
 

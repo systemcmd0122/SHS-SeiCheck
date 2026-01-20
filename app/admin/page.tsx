@@ -8,7 +8,7 @@ import {
   collection,
   addDoc,
 } from "firebase/firestore";
-import { db, getEventsRealtime, getResponsesRealtime, deleteEventAndResponses } from "@/lib/firebase";
+import { db, getEventsRealtime, getResponsesRealtime, deleteEventAndResponses, deleteResponseByMemberAndEvent } from "@/lib/firebase";
 import { Event, Response, MEMBERS, EventType } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,7 @@ export default function AdminPage() {
   const [showOnlyUnanswered, setShowOnlyUnanswered] = useState(false);
   const [filterEventType, setFilterEventType] = useState<EventType | "all">("all");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [showStatsDialog, setShowStatsDialog] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<{
     memberId: string;
     memberName: string;
@@ -88,6 +89,7 @@ export default function AdminPage() {
   } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
+  const [responseToDelete, setResponseToDelete] = useState<{ memberId: string; eventId: string } | null>(null);
 
   // パスワード認証チェック
   useEffect(() => {
@@ -335,6 +337,17 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteResponse = async () => {
+    if (!responseToDelete) return;
+    try {
+      await deleteResponseByMemberAndEvent(responseToDelete.memberId, responseToDelete.eventId);
+    } catch (error) {
+      console.error("Failed to delete response:", error);
+    } finally {
+      setResponseToDelete(null);
+    }
+  };
+
   const getResponseForMemberAndEvent = (
     memberId: string,
     eventId: string
@@ -543,14 +556,16 @@ export default function AdminPage() {
 
         {/* 全体統計ダッシュボード */}
         {events.length > 0 && (
-          <Card className="overflow-hidden shadow-sm mb-10 border border-slate-200 dark:border-slate-800">
-            <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-slate-800/50 dark:to-slate-800/50 p-6">
-              <CardTitle className="flex items-center gap-2 text-xl text-slate-900 dark:text-white">
-                <Users className="h-5 w-5" />
-                出欠統計ダッシュボード
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+          <Dialog open={showStatsDialog} onOpenChange={setShowStatsDialog}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto rounded-lg bg-white dark:bg-slate-800">
+              <DialogHeader>
+                <DialogTitle className="text-slate-900 dark:text-white text-xl md:text-2xl">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    出欠統計ダッシュボード
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
               {selectedEventId && (
                 (() => {
                   const event = events.find((e) => e.id === selectedEventId);
@@ -559,30 +574,20 @@ export default function AdminPage() {
 
                   return (
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
                         <div>
                           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{event.name}</h3>
                           <p className="text-sm text-slate-600 dark:text-slate-400">{event.date}</p>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => exportEventToCSV(selectedEventId)}
-                            className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
-                          >
-                            <Download className="h-4 w-4" />
-                            <span className="hidden sm:inline">CSV</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedEventId(null)}
-                            className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          >
-                            クリア
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportEventToCSV(selectedEventId)}
+                          className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 gap-1"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="hidden sm:inline">CSV</span>
+                        </Button>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <div className="flex flex-col items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-green-50 dark:bg-green-900/20 p-4">
@@ -615,14 +620,8 @@ export default function AdminPage() {
                   );
                 })()
               )}
-              {!selectedEventId && (
-                <div className="text-center py-8 text-slate-600 dark:text-slate-400">
-                  <Calendar className="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm">下のイベント一覧からイベントを選択して統計を表示します</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* 新しい日程を追加 */}
@@ -740,7 +739,10 @@ export default function AdminPage() {
                 return (
                   <div
                     key={event.id}
-                    onClick={() => setSelectedEventId(event.id)}
+                    onClick={() => {
+                      setSelectedEventId(event.id);
+                      setShowStatsDialog(true);
+                    }}
                     className="border border-border rounded-lg p-4 bg-card hover:shadow-md transition-all cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -953,6 +955,15 @@ export default function AdminPage() {
                           </div>
                         </div>
                       )}
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700 mt-4">
+                        <Button
+                          onClick={() => setResponseToDelete({ memberId: selectedDetail.memberId, eventId: selectedDetail.eventId })}
+                          variant="destructive"
+                          className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white font-semibold"
+                        >
+                          この回答を削除
+                        </Button>
+                      </div>
                     </>
                   );
                 })()}
@@ -973,6 +984,22 @@ export default function AdminPage() {
             <AlertDialogFooter>
               <AlertDialogCancel>キャンセル</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteEvent}>削除</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 回答削除確認ダイアログ */}
+        <AlertDialog open={!!responseToDelete} onOpenChange={() => setResponseToDelete(null)}>
+          <AlertDialogContent className="bg-white dark:bg-slate-800">
+            <AlertDialogHeader>
+              <AlertDialogTitle>本当にこの回答を削除しますか?</AlertDialogTitle>
+              <AlertDialogDescription>
+                この回答を削除すると、記録から削除されます。この操作は元に戻せません。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>キャンセル</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteResponse} className="bg-red-600 hover:bg-red-700">削除</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

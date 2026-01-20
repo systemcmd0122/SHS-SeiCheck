@@ -13,8 +13,15 @@ export default function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [showPrompt, setShowPrompt] = useState(false);
     const [isIOSInstalled, setIsIOSInstalled] = useState(false);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (!isClient) return;
+
         // iOS PWAのインストール確認
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isInStandaloneMode =
@@ -47,7 +54,7 @@ export default function PWAInstallPrompt() {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
         };
-    }, []);
+    }, [isClient]);
 
     const handleInstall = async () => {
         if (!deferredPrompt) return;
@@ -66,7 +73,7 @@ export default function PWAInstallPrompt() {
         setDeferredPrompt(null);
     };
 
-    if (!showPrompt && !isIOSInstalled) return null;
+    if (!isClient || (!showPrompt && !isIOSInstalled)) return null;
 
     return (
         <>

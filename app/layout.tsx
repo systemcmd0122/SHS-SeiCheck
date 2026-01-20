@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
-import { PWAUpdateNotification } from "@/components/pwa-update-notification"
 import PWAInstallPrompt from '@/components/pwa-install-prompt'
 import { PWARegister } from '@/components/pwa-register'
 import './globals.css'
@@ -27,9 +26,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icon.jpg', sizes: 'any' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icon.jpg' },
+      { url: '/icon.png', sizes: '192x192' },
+      { url: '/icon.png', sizes: '512x512' },
     ],
   },
   other: {
@@ -63,16 +65,15 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#3b82f6" />
       </head>
-      <body className={`font-sans antialiased bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 min-h-screen`}>
+      <body className={`font-sans antialiased`}>
         <PWARegister />
+        <PWAInstallPrompt />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <PWAInstallPrompt />
-          <PWAUpdateNotification />
           {children}
         </ThemeProvider>
         <Analytics />

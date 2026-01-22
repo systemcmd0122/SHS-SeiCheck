@@ -32,18 +32,22 @@ export interface ResponseHistory {
   changedAt: Date;
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  category: "重要" | "お知らせ" | "更新";
+  createdAt: Date;
+  updatedAt: Date;
+  pinned: boolean;
+}
+
 // PWA関連の型定義
 export interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   userChoice: Promise<{
     outcome: 'accepted' | 'dismissed';
   }>;
-}
-
-export interface NavigatorWithWakeLock extends Navigator {
-  wakeLock?: {
-    request(type: 'screen'): Promise<WakeLockSentinel>;
-  };
 }
 
 export interface WakeLockSentinel {

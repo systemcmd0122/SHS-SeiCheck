@@ -26,12 +26,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icon.jpg', sizes: 'any' },
-      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.jpg', sizes: '192x192', type: 'image/jpg' },
+      { url: '/icon.jpg', sizes: '512x512', type: 'image/jpg' },
     ],
     apple: [
-      { url: '/icon.png', sizes: '192x192' },
-      { url: '/icon.png', sizes: '512x512' },
+      { url: '/icon.jpg', sizes: '192x192' },
+      { url: '/icon.jpg', sizes: '512x512' },
     ],
   },
   other: {

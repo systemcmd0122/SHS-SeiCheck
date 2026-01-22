@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Calendar, Users, Download, Filter, Clock, Menu, X, Trash2 } from "lucide-react";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { AnnouncementsManager } from "@/components/announcements-manager";
 import {
   Sheet,
   SheetContent,
@@ -666,7 +667,7 @@ export default function AdminPage() {
                     <SelectTrigger id="eventType" className="border border-slate-200 dark:border-slate-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                       <SelectItem value="定例会">定例会</SelectItem>
                       <SelectItem value="行事準備">行事準備</SelectItem>
                       <SelectItem value="本番">本番</SelectItem>
@@ -710,7 +711,7 @@ export default function AdminPage() {
                 <SelectTrigger className="w-[140px] border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                   <SelectItem value="all">すべて</SelectItem>
                   <SelectItem value="定例会">定例会</SelectItem>
                   <SelectItem value="行事準備">行事準備</SelectItem>
@@ -1003,6 +1004,21 @@ export default function AdminPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* お知らせ管理セクション */}
+        <div className="mt-12 md:mt-16">
+          <Card className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-lg">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-700">
+              <CardTitle className="text-slate-900 dark:text-white">📢 お知らせ管理</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">
+                ユーザーに表示されるお知らせを管理できます
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <AnnouncementsManager adminMode={authenticated} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

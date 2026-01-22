@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MEMBERS, type Event } from "@/lib/types";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, where, onSnapshot } from "firebase/firestore";
 import { Calendar, Clock, LogOut, ChevronRight, Menu, X, Settings } from "lucide-react";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { usePWAUpdate } from "@/hooks/use-pwa-update";
+import { NotificationPermissionRequest } from "@/components/notification-permission-request";
+import { useEventNotifications } from "@/hooks/use-event-notifications";
+import { AnnouncementsDisplay } from "@/components/announcements-display";
 import {
   Sheet,
   SheetContent,
@@ -22,11 +25,15 @@ export default function MemberSelectionPage() {
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [confirmingMember, setConfirmingMember] = useState<{ id: string; name: string; committee: string } | null>(null);
   const [nextEvent, setNextEvent] = useState<Event | null>(null);
+  const [allEvents, setAllEvents] = useState<Event[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // PWA更新チェック
   usePWAUpdate();
+
+  // イベント通知フック
+  useEventNotifications(allEvents);
 
   // キャッシュされたメンバーをチェック
   useEffect(() => {
@@ -43,8 +50,9 @@ export default function MemberSelectionPage() {
   }, []);
 
   useEffect(() => {
-    const fetchNextEvent = async () => {
+    const fetchInitialAndListenToEvents = async () => {
       try {
+        // 初期データ取得
         const today = new Date().toISOString().split("T")[0];
         const eventsRef = collection(db, "events");
         const q = query(
@@ -63,14 +71,33 @@ export default function MemberSelectionPage() {
             createdAt: doc.data().createdAt?.toDate() || new Date(),
           } as Event);
         }
+
+        // リアルタイムでイベント一覧を監視
+        const unsubscribe = onSnapshot(
+          query(eventsRef, orderBy("date", "asc")),
+          (snapshot) => {
+            const events = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              date: doc.data().date instanceof Date ? doc.data().date : new Date(doc.data().date),
+              createdAt: doc.data().createdAt?.toDate() || new Date(),
+            } as Event));
+            setAllEvents(events);
+          }
+        );
+
+        return () => unsubscribe();
       } catch (error) {
-        console.error("[v0] Error fetching next event:", error);
+        console.error("[v0] Error fetching events:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNextEvent();
+    const cleanup = fetchInitialAndListenToEvents();
+    return () => {
+      cleanup?.then((unsub) => unsub && unsub());
+    };
   }, []);
 
   const handleSelectMember = (memberId: string) => {
@@ -197,6 +224,19 @@ export default function MemberSelectionPage() {
 
       {/* メインコンテンツ */}
       <div className="flex-1 overflow-y-auto mx-auto max-w-4xl w-full px-4 md:px-6 lg:px-8 py-8 md:py-12">
+        {/* 通知権限リクエスト */}
+        <div className="mb-8">
+          <NotificationPermissionRequest />
+        </div>
+
+        {/* お知らせセクション */}
+        <div className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white mb-4">
+            📢 お知らせ
+          </h2>
+          <AnnouncementsDisplay />
+        </div>
+
         {/* 次の予定セクション */}
         {!loading && nextEvent && (
           <div className="mb-8 md:mb-12">

@@ -8,9 +8,13 @@ import {
   writeBatch,
   query,
   where,
-  getDocs
+  getDocs,
+  orderBy,
+  addDoc,
+  updateDoc,
+  Timestamp
 } from "firebase/firestore";
-import { Event, Response } from "./types";
+import { Event, Response, Announcement } from "./types";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMFSmAZAURnGHZW3-zWNK7-rzNLKtwb0k",
@@ -102,6 +106,83 @@ export const deleteResponseByMemberAndEvent = async (memberId: string, eventId: 
     const responseDoc = responsesSnapshot.docs[0];
     await deleteDoc(responseDoc.ref);
   }
+};
+
+// リアルタイムでお知らせを取得する関数
+export const getAnnouncementsRealtime = (callback: (announcements: Announcement[]) => void) => {
+  const announcementsCollection = collection(db, 'announcements');
+  return onSnapshot(
+    query(announcementsCollection, orderBy('createdAt', 'desc')),
+    (snapshot) => {
+      const announcements = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
+        } as Announcement;
+      }).sort((a, b) => {
+        // ピン止められたものを上に表示
+        if (a.pinned !== b.pinned) {
+          return a.pinned ? -1 : 1;
+        }
+        // その後、作成日時の新しい順に表示
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+      callback(announcements);
+    }
+  );
+};
+
+// お知らせを投稿する関数
+export const createAnnouncement = async (
+  title: string,
+  content: string,
+  category: "重要" | "お知らせ" | "更新"
+) => {
+  const announcementsCollection = collection(db, 'announcements');
+  return addDoc(announcementsCollection, {
+    title,
+    content,
+    category,
+    pinned: false,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+};
+
+// お知らせを更新する関数
+export const updateAnnouncement = async (
+  announcementId: string,
+  title: string,
+  content: string,
+  category: "重要" | "お知らせ" | "更新",
+  pinned: boolean
+) => {
+  const announcementDoc = doc(db, 'announcements', announcementId);
+  return updateDoc(announcementDoc, {
+    title,
+    content,
+    category,
+    pinned,
+    updatedAt: Timestamp.now(),
+  });
+};
+
+// お知らせを削除する関数
+export const deleteAnnouncement = async (announcementId: string) => {
+  const announcementDoc = doc(db, 'announcements', announcementId);
+  return deleteDoc(announcementDoc);
+};
+
+// お知らせのピン止めを切り替える関数
+export const toggleAnnouncementPin = async (announcementId: string, currentPinned: boolean) => {
+  const announcementDoc = doc(db, 'announcements', announcementId);
+  return updateDoc(announcementDoc, {
+    pinned: !currentPinned,
+    updatedAt: Timestamp.now(),
+  });
 };
 
 

@@ -64,6 +64,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { StatisticsPanel } from "@/components/StatisticsPanel";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { SharePanel } from "@/components/SharePanel";
+import { UnansweredPanel } from "@/components/UnansweredPanel";
+import { EventCalendar } from "@/components/EventCalendar";
 import { members } from "@/lib/members";
 import {
   getAllEvents,
@@ -74,6 +76,9 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
+  subscribeToAllEvents,
+  subscribeToAllResponses,
+  subscribeToAllAnnouncements,
 } from "@/lib/db";
 import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
@@ -130,6 +135,26 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadData();
+
+    // リアルタイムリスナーの設定
+    const unsubscribeEvents = subscribeToAllEvents((updatedEvents) => {
+      setEvents(updatedEvents);
+    });
+
+    const unsubscribeResponses = subscribeToAllResponses((updatedResponses) => {
+      setResponses(updatedResponses);
+    });
+
+    const unsubscribeAnnouncements = subscribeToAllAnnouncements((updatedAnnouncements) => {
+      setAnnouncements(updatedAnnouncements);
+    });
+
+    // クリーンアップ: コンポーネントアンマウント時にリスナーを解除
+    return () => {
+      unsubscribeEvents();
+      unsubscribeResponses();
+      unsubscribeAnnouncements();
+    };
   }, []);
 
   const handleCreateEvent = async () => {
@@ -163,7 +188,7 @@ export default function AdminPage() {
         time: "",
         deadlineDate: "",
       });
-      await loadData();
+      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定作成エラー:", error);
       alert("予定の作成に失敗しました");
@@ -199,7 +224,7 @@ export default function AdminPage() {
         content: "",
         priority: "通常",
       });
-      await loadData();
+      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ作成エラー:", error);
       alert("お知らせの作成に失敗しました");
@@ -223,7 +248,7 @@ export default function AdminPage() {
 
     try {
       await deleteAnnouncement(announcementId);
-      await loadData();
+      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ削除エラー:", error);
       alert("お知らせの削除に失敗しました");
@@ -237,7 +262,7 @@ export default function AdminPage() {
 
     try {
       await deleteEvent(eventId);
-      await loadData();
+      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定削除エラー:", error);
       alert("予定の削除に失敗しました");
@@ -905,6 +930,13 @@ export default function AdminPage() {
                 <span className="hidden sm:inline">お知らせ</span>
               </TabsTrigger>
               <TabsTrigger
+                value="calendar"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">カレンダー</span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="events"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
               >
@@ -1115,6 +1147,17 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="calendar" className="space-y-4">
+            <EventCalendar
+              events={events}
+              highlightDates={events
+                .filter((e) => getUnansweredMembers(e.id).length > 0)
+                .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
+              includeGoogleCalendar={true}
+              googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+            />
+          </TabsContent>
+
           <TabsContent value="events" className="space-y-4">
             <Card className="border-0 shadow-md">
               <CardHeader className="pb-3">
@@ -1255,6 +1298,9 @@ export default function AdminPage() {
                             </div>
                           </div>
                         )}
+
+                        {/* 未回答者促促パネル */}
+                        <UnansweredPanel event={event} responses={responses.filter((r) => r.eventId === event.id)} />
 
                         <div>
                           <h4 className="text-sm font-semibold mb-3">回答詳細</h4>

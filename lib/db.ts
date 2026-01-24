@@ -8,6 +8,8 @@ import {
   deleteDoc,
   query,
   where,
+  onSnapshot,
+  Unsubscribe,
 } from "firebase/firestore";
 import type { Event, Response, Announcement, ResponseLog, SharedResponse } from "./types";
 
@@ -370,4 +372,95 @@ export async function getSharedResponsesForEvent(eventId: string): Promise<Share
 export async function deleteSharedResponse(sharedId: string): Promise<void> {
   const sharedRef = doc(sharedResponsesCollection, sharedId);
   await deleteDoc(sharedRef);
+}
+
+// ===== リアルタイムリスナー関数 =====
+
+/**
+ * すべての予定をリアルタイムでリッスン
+ */
+export function subscribeToAllEvents(callback: (events: Event[]) => void): Unsubscribe {
+  return onSnapshot(eventsCollection, (snapshot) => {
+    const events: Event[] = [];
+    snapshot.forEach((doc) => {
+      events.push(doc.data() as Event);
+    });
+    // 日時の降順でソート（新しい順）
+    events.sort((a, b) =>
+      new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+    );
+    callback(events);
+  });
+}
+
+/**
+ * 特定の予定をリアルタイムでリッスン
+ */
+export function subscribeToEvent(eventId: string, callback: (event: Event | null) => void): Unsubscribe {
+  const eventRef = doc(eventsCollection, eventId);
+  return onSnapshot(eventRef, (doc) => {
+    if (doc.exists()) {
+      callback(doc.data() as Event);
+    } else {
+      callback(null);
+    }
+  });
+}
+
+/**
+ * 特定の予定に対する全回答をリアルタイムでリッスン
+ */
+export function subscribeToResponsesForEvent(eventId: string, callback: (responses: Response[]) => void): Unsubscribe {
+  const q = query(responsesCollection, where("eventId", "==", eventId));
+  return onSnapshot(q, (snapshot) => {
+    const responses: Response[] = [];
+    snapshot.forEach((doc) => {
+      responses.push(doc.data() as Response);
+    });
+    callback(responses);
+  });
+}
+
+/**
+ * すべての回答をリアルタイムでリッスン
+ */
+export function subscribeToAllResponses(callback: (responses: Response[]) => void): Unsubscribe {
+  return onSnapshot(responsesCollection, (snapshot) => {
+    const responses: Response[] = [];
+    snapshot.forEach((doc) => {
+      responses.push(doc.data() as Response);
+    });
+    callback(responses);
+  });
+}
+
+/**
+ * すべてのお知らせをリアルタイムでリッスン
+ */
+export function subscribeToAllAnnouncements(callback: (announcements: Announcement[]) => void): Unsubscribe {
+  return onSnapshot(announcementsCollection, (snapshot) => {
+    const announcements: Announcement[] = [];
+    snapshot.forEach((doc) => {
+      announcements.push(doc.data() as Announcement);
+    });
+    // 作成日時の降順でソート（新しい順）
+    announcements.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    callback(announcements);
+  });
+}
+
+/**
+ * 特定のお知らせをリアルタイムでリッスン
+ */
+export function subscribeToAnnouncement(announcementId: string, callback: (announcement: Announcement | null) => void): Unsubscribe {
+  const announcementRef = doc(announcementsCollection, announcementId);
+  return onSnapshot(announcementRef, (doc) => {
+    if (doc.exists()) {
+      callback(doc.data() as Announcement);
+    } else {
+      callback(null);
+    }
+  });
 }

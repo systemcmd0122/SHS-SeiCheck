@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingScreen } from "@/components/Loading";
+import { EventCalendar } from "@/components/EventCalendar";
 import { members } from "@/lib/members";
 import {
   getAllEvents,
@@ -48,6 +49,9 @@ import {
   saveResponse,
   getResponse,
   getAllAnnouncements,
+  subscribeToAllEvents,
+  subscribeToAllResponses,
+  subscribeToAllAnnouncements,
 } from "@/lib/db";
 import type { Event, Response, ResponseStatus, Announcement } from "@/lib/types";
 import { REASON_PRESETS } from "@/lib/types";
@@ -68,14 +72,6 @@ export default function MemberDashboard() {
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!member) {
-      router.push("/");
-      return;
-    }
-    loadData();
-  }, [member, router]);
-
   const loadData = async () => {
     setLoading(true);
     try {
@@ -93,6 +89,34 @@ export default function MemberDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!member) {
+      router.push("/");
+      return;
+    }
+    loadData();
+
+    // リアルタイムリスナーの設定
+    const unsubscribeEvents = subscribeToAllEvents((updatedEvents) => {
+      setEvents(updatedEvents);
+    });
+
+    const unsubscribeResponses = subscribeToAllResponses((updatedResponses) => {
+      setResponses(updatedResponses);
+    });
+
+    const unsubscribeAnnouncements = subscribeToAllAnnouncements((updatedAnnouncements) => {
+      setAnnouncements(updatedAnnouncements);
+    });
+
+    // クリーンアップ: コンポーネントアンマウント時にリスナーを解除
+    return () => {
+      unsubscribeEvents();
+      unsubscribeResponses();
+      unsubscribeAnnouncements();
+    };
+  }, [member, router]);
 
   const handleEventClick = async (event: Event) => {
     if (isDeadlinePassed(event)) {
@@ -141,7 +165,7 @@ export default function MemberDashboard() {
       console.log("📝 回答を保存中:", responseData);
       await saveResponse(responseData);
       console.log("✓ 回答保存成功");
-      await loadData();
+      // リアルタイムリスナーが自動的に更新する
       setDialogOpen(false);
       setSelectedEvent(null);
       setReason("");
@@ -384,6 +408,15 @@ export default function MemberDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* カレンダー */}
+        <EventCalendar
+          events={events}
+          onEventClick={handleEventClick}
+          highlightDates={events.filter(e => !getMyResponse(e.id)).map(e => format(new Date(e.dateTime), "yyyy-MM-dd"))}
+          includeGoogleCalendar={true}
+          googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+        />
 
         {/* 直近の予定 */}
         {upcomingEvents.length > 0 && (

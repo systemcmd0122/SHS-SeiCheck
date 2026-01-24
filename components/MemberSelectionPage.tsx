@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingScreen } from "@/components/Loading";
+import { TodayEventsList } from "@/components/TodayEventsList";
 import { members } from "@/lib/members";
 import { UserCircle, LogIn, Settings } from "lucide-react";
 
@@ -37,6 +38,7 @@ interface MemberSelectionPageProps {
     description?: string;
     buttonLabel?: string;
     showAdminButton?: boolean;
+    events?: any[];
 }
 
 export function MemberSelectionPage({
@@ -44,6 +46,7 @@ export function MemberSelectionPage({
     description = "メンバー選択してログイン",
     buttonLabel = "ログイン",
     showAdminButton = true,
+    events = [],
 }: MemberSelectionPageProps) {
     const router = useRouter();
     const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -156,6 +159,15 @@ export function MemberSelectionPage({
                     <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
                     <p className="text-muted-foreground">{description}</p>
                 </div>
+
+                {/* 今日の予定表示 */}
+                {events.length > 0 && (
+                    <div className="w-full">
+                        <TodayEventsList
+                            events={events}
+                        />
+                    </div>
+                )}
 
                 <Card className="border-0 shadow-xl">
                     <CardHeader className="space-y-1 pb-4">

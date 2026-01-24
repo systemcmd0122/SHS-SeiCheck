@@ -1,72 +1,118 @@
+// メンバーの型定義
 export interface Member {
   id: string;
   name: string;
   committee: string;
 }
 
+// 予定の種類
 export type EventType = "定例会" | "行事準備" | "本番" | "臨時集会" | "その他";
 
+// 予定の種類の定数配列
+export const EVENT_TYPES: EventType[] = ["定例会", "行事準備", "本番", "臨時集会", "その他"];
+
+// 回答状態
+export type ResponseStatus = "参加" | "遅れる" | "不参加" | "未回答";
+
+// 回答状態の定数配列
+export const RESPONSE_STATUSES: ResponseStatus[] = ["参加", "遅れる", "不参加", "未回答"];
+
+// 予定の型定義
 export interface Event {
   id: string;
-  name: string;
-  date: string;
+  title: string;
   type: EventType;
-  deadline?: string;
-  createdAt: Date;
+  dateTime: string; // ISO 8601形式
+  deadline: string; // ISO 8601形式
+  createdAt: string;
+  createdBy: string;
 }
 
+// 回答の型定義
 export interface Response {
-  id: string;
-  memberId: string;
-  memberName: string;
   eventId: string;
-  status: "参加" | "遅れる" | "不参加" | null;
-  reason?: string;
-  updatedAt: Date;
-  history?: ResponseHistory[];
+  memberId: string;
+  status: ResponseStatus;
+  reason?: string; // 欠席理由
+  updatedAt: string;
+  updatedBy: string; // 回答者のID
 }
 
-export interface ResponseHistory {
-  previousStatus: "参加" | "遅れる" | "不参加" | null;
-  newStatus: "参加" | "遅れる" | "不参加" | null;
-  changedAt: Date;
+// 予定と回答をまとめた型
+export interface EventWithResponses {
+  event: Event;
+  responses: Record<string, Response>; // memberId -> Response
+  unansweredMembers: Member[];
+  isOverdue: boolean;
 }
 
+// 出欠状況の集計
+export interface AttendanceSummary {
+  eventId: string;
+  eventTitle: string;
+  eventType: EventType;
+  eventDateTime: string;
+  attended: number;
+  absent: number;
+  undecided: number;
+  unanswered: number;
+  total: number;
+}
+
+// よく使う理由のプリセット
+export const REASON_PRESETS: Record<Exclude<ResponseStatus, "参加" | "未回答">, string[]> = {
+  遅れる: ["授業が延長", "委員会活動", "部活動", "その他の用事"],
+  不参加: ["体調不良", "家庭の事情", "他の予定", "授業・試験", "部活動"],
+};
+
+// お知らせの型定義
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  category: "重要" | "お知らせ" | "更新";
-  createdAt: Date;
-  updatedAt: Date;
-  pinned: boolean;
+  priority: "通常" | "重要" | "緊急";
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string;
 }
 
-// PWA関連の型定義
-export interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-  }>;
+// お知らせの優先度
+export type AnnouncementPriority = "通常" | "重要" | "緊急";
+
+// お知らせの優先度の定数配列
+export const ANNOUNCEMENT_PRIORITIES: AnnouncementPriority[] = ["通常", "重要", "緊急"];
+
+// 回答ログの型定義
+export interface ResponseLog {
+  id: string;
+  eventId: string;
+  memberId: string;
+  previousStatus: ResponseStatus | null;
+  newStatus: ResponseStatus;
+  changedAt: string;
+  changedBy: string;
+  previousReason?: string;
+  newReason?: string;
 }
 
-export interface WakeLockSentinel {
-  release(): Promise<void>;
-  addEventListener(type: 'release', listener: () => void): void;
-  removeEventListener(type: 'release', listener: () => void): void;
+// テンプレートの型定義
+export interface EventTemplate {
+  id: string;
+  name: string;
+  type: EventType;
+  timeHour: number;
+  timeMinute: number;
+  deadlineHoursBefore: number;
+  createdAt: string;
+  createdBy: string;
 }
 
-export const MEMBERS: Member[] = [
-  { id: "1", name: "岩田 康孝", committee: "HR委員会" },
-  { id: "2", name: "黒木 梨帆", committee: "交通委員会" },
-  { id: "3", name: "長谷川 洸武", committee: "広報委員会" },
-  { id: "4", name: "遠竹 美優", committee: "学習委員会" },
-  { id: "5", name: "猪口 ゆいか", committee: "風紀委員会" },
-  { id: "6", name: "財津 幸希", committee: "体育委員会" },
-  { id: "7", name: "河野 直彪", committee: "美化委員会" },
-  { id: "8", name: "是澤 美莉亜", committee: "保健委員会" },
-  { id: "9", name: "山本 泰綺", committee: "図書委員会" },
-  { id: "10", name: "齋藤 徠夢", committee: "文化委員会" },
-  { id: "11", name: "徳田 太祐", committee: "生徒会長" },
-  { id: "12", name: "井内 翔太", committee: "生徒会副会長" },
-];
+// リマインダー設定
+export interface ReminderSetting {
+  id: string;
+  eventId: string;
+  memberId: string;
+  reminderTime: number; // 締切前の時間数
+  sent: boolean;
+  sentAt?: string;
+}

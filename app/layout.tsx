@@ -1,73 +1,110 @@
-import React from "react"
-import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { ThemeProvider } from '@/components/theme-provider'
-import PWAInstallPrompt from '@/components/pwa-install-prompt'
-import { PWARegister } from '@/components/pwa-register'
-import './globals.css'
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SwRegister } from "./sw-register";
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+});
 
 export const metadata: Metadata = {
-  title: 'SHS SeiCheck - 佐土原高校 生徒会出欠管理',
-  description: '佐土原高校 生徒会メンバー専用の出欠管理システム',
-  generator: 'v0.app',
-  manifest: '/manifest.json',
+  title: "生徒会出欠管理システム",
+  description: "生徒会メンバーの出欠を管理するアプリケーション",
+  manifest: "/manifest.json",
+  metadataBase: new URL("http://localhost:3000"),
+  openGraph: {
+    title: "生徒会出欠管理システム",
+    description: "生徒会メンバーの出欠を管理するアプリケーション",
+    url: "/",
+    siteName: "SHS SeiCheck",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "生徒会出欠管理システム",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "生徒会出欠管理システム",
+    description: "生徒会メンバーの出欠を管理するアプリケーション",
+    images: ["/og-image.png"],
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'SeiCheck',
-  },
-  formatDetection: {
-    telephone: false,
+    statusBarStyle: "default",
+    title: "出欠管理",
   },
   icons: {
     icon: [
-      { url: '/icon.jpg', sizes: 'any' },
-      { url: '/icon.jpg', sizes: '192x192', type: 'image/jpg' },
-      { url: '/icon.jpg', sizes: '512x512', type: 'image/jpg' },
+      {
+        url: "/icon.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
     ],
     apple: [
-      { url: '/icon.jpg', sizes: '192x192' },
-      { url: '/icon.jpg', sizes: '512x512' },
+      {
+        url: "/icon.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
     ],
   },
-  other: {
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'apple-mobile-web-app-title': 'SeiCheck',
-  }
-}
+};
 
 export const viewport: Viewport = {
-  themeColor: '#3b82f6',
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   minimumScale: 1,
   maximumScale: 5,
   userScalable: true,
-  viewportFit: 'cover',
-}
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="SeiCheck" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#3b82f6" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="出欠管理" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-TileColor" content="#2d3748" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+
+        {/* プリコネクト */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`font-sans antialiased`}>
-        <PWARegister />
-        <PWAInstallPrompt />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -75,9 +112,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <SwRegister />
         </ThemeProvider>
-        <Analytics />
+
+        {/* 遅延読み込みスクリプト */}
+        <Script
+          src="https://cdn.jsdelivr.net/npm/pwa-asset-generator@6.2.0/dist/pwa-asset-generator.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
-  )
+  );
 }

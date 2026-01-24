@@ -1,0 +1,645 @@
+"use client";
+
+import { useState, useEffect, JSX } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { format, isPast, isFuture } from "date-fns";
+import { ja } from "date-fns/locale";
+import {
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ChevronRight,
+  LogOut,
+  User,
+  TrendingUp,
+  Activity,
+  Bell,
+  Megaphone,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LoadingScreen } from "@/components/Loading";
+import { members } from "@/lib/members";
+import {
+  getAllEvents,
+  getAllResponses,
+  saveResponse,
+  getResponse,
+  getAllAnnouncements,
+} from "@/lib/db";
+import type { Event, Response, ResponseStatus, Announcement } from "@/lib/types";
+import { REASON_PRESETS } from "@/lib/types";
+
+export default function MemberDashboard() {
+  const params = useParams();
+  const router = useRouter();
+  const memberId = params.id as string;
+
+  const [member, setMember] = useState(members.find((m) => m.id === memberId));
+  const [events, setEvents] = useState<Event[]>([]);
+  const [responses, setResponses] = useState<Response[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<ResponseStatus>("参加");
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!member) {
+      router.push("/");
+      return;
+    }
+    loadData();
+  }, [member, router]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [eventsData, responsesData, announcementsData] = await Promise.all([
+        getAllEvents(),
+        getAllResponses(),
+        getAllAnnouncements(),
+      ]);
+      setEvents(eventsData);
+      setResponses(responsesData);
+      setAnnouncements(announcementsData);
+    } catch (error) {
+      console.error("データ読み込みエラー:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEventClick = async (event: Event) => {
+    if (isDeadlinePassed(event)) {
+      return;
+    }
+
+    setSelectedEvent(event);
+
+    // 既存の回答を取得
+    const existingResponse = await getResponse(event.id, memberId);
+    if (existingResponse) {
+      setSelectedStatus(existingResponse.status);
+      setReason(existingResponse.reason || "");
+    } else {
+      setSelectedStatus("参加");
+      setReason("");
+    }
+
+    setDialogOpen(true);
+  };
+
+  const handleSaveResponse = async () => {
+    if (!selectedEvent) return;
+
+    // 参加以外で理由が空の場合はエラー
+    if ((selectedStatus === "遅れる" || selectedStatus === "不参加") && !reason.trim()) {
+      alert("理由を入力してください");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const responseData: Response = {
+        eventId: selectedEvent.id,
+        memberId: memberId,
+        status: selectedStatus,
+        reason: reason.trim() || undefined,
+        updatedAt: new Date().toISOString(),
+        updatedBy: memberId,
+      };
+
+      await saveResponse(responseData);
+      await loadData();
+      setDialogOpen(false);
+      setSelectedEvent(null);
+      setReason("");
+    } catch (error) {
+      console.error("回答保存エラー:", error);
+      alert("回答の保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isDeadlinePassed = (event: Event) => {
+    return isPast(new Date(event.deadline));
+  };
+
+  const getMyResponse = (eventId: string) => {
+    return responses.find((r) => r.eventId === eventId && r.memberId === memberId);
+  };
+
+  const getStatusBadge = (status: ResponseStatus, isOverdue: boolean = false) => {
+    if (isOverdue && status === "未回答") {
+      return (
+        <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-0">
+          <AlertTriangle className="w-3 h-3 mr-1" />
+          期限切れ
+        </Badge>
+      );
+    }
+
+    const badges: Record<ResponseStatus, JSX.Element> = {
+      参加: (
+        <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          参加
+        </Badge>
+      ),
+      遅れる: (
+        <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
+          <Clock className="w-3 h-3 mr-1" />
+          遅れる
+        </Badge>
+      ),
+      不参加: (
+        <Badge className="bg-rose-500 hover:bg-rose-600 text-white border-0">
+          <XCircle className="w-3 h-3 mr-1" />
+          不参加
+        </Badge>
+      ),
+      未回答: (
+        <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900">
+          未回答
+        </Badge>
+      ),
+    };
+    return badges[status];
+  };
+
+  const getPriorityBadge = (priority: Announcement["priority"]) => {
+    const badges = {
+      通常: <Badge variant="outline">通常</Badge>,
+      重要: <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">重要</Badge>,
+      緊急: <Badge className="bg-red-500 hover:bg-red-600 text-white border-0">緊急</Badge>,
+    };
+    return badges[priority];
+  };
+
+  const getUpcomingEvents = () => {
+    return events
+      .filter((e) => isFuture(new Date(e.dateTime)))
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
+      .slice(0, 3);
+  };
+
+  const getMyStats = () => {
+    const myResponses = responses.filter((r) => r.memberId === memberId);
+    return {
+      participated: myResponses.filter((r) => r.status === "参加").length,
+      late: myResponses.filter((r) => r.status === "遅れる").length,
+      absent: myResponses.filter((r) => r.status === "不参加").length,
+      unanswered: events.filter((e) => {
+        const response = getMyResponse(e.id);
+        return !response;
+      }).length,
+      overdueUnanswered: events.filter((e) => {
+        const response = getMyResponse(e.id);
+        return !response && isDeadlinePassed(e);
+      }).length,
+    };
+  };
+
+  const handleLogout = () => {
+    // キャッシュは保持し、ログイン画面に戻る
+    router.push("/");
+  };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!member) {
+    return null;
+  }
+
+  const upcomingEvents = getUpcomingEvents();
+  const stats = getMyStats();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      {/* ヘッダー */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+              <User className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-base sm:text-lg font-bold">{member.name}</h1>
+              <p className="text-xs text-muted-foreground">{member.committee}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">ログアウト</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto p-4 space-y-6 max-w-4xl">
+        {/* お知らせセクション */}
+        {announcements.length > 0 && (
+          <Card className="border-0 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-primary" />
+                お知らせ
+              </CardTitle>
+              <CardDescription>
+                最新のお知らせを確認してください
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {announcements.slice(0, 3).map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className={`p-4 rounded-lg border transition-all ${announcement.priority === "緊急"
+                    ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
+                    : announcement.priority === "重要"
+                      ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
+                      : "bg-card hover:shadow-md"
+                    }`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {announcement.priority !== "通常" && (
+                        <Megaphone className="w-4 h-4 text-primary shrink-0" />
+                      )}
+                      <h3 className="font-semibold text-base truncate">
+                        {announcement.title}
+                      </h3>
+                    </div>
+                    {getPriorityBadge(announcement.priority)}
+                  </div>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                    {announcement.content}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {format(new Date(announcement.createdAt), "M月d日 HH:mm", { locale: ja })}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 統計カード */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">参加</CardTitle>
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.participated}</div>
+              <p className="text-xs text-muted-foreground mt-1">回答済み</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">遅れる</CardTitle>
+              <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.late}</div>
+              <p className="text-xs text-muted-foreground mt-1">遅刻予定</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">不参加</CardTitle>
+              <div className="p-2 bg-rose-100 dark:bg-rose-900 rounded-lg">
+                <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.absent}</div>
+              <p className="text-xs text-muted-foreground mt-1">欠席</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">未回答</CardTitle>
+              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.unanswered}</div>
+              {stats.overdueUnanswered > 0 && (
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
+                  期限切れ {stats.overdueUnanswered}件
+                </p>
+              )}
+              {stats.overdueUnanswered === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">残り回答</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 直近の予定 */}
+        {upcomingEvents.length > 0 && (
+          <Card className="border-0 shadow-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    直近の予定
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    回答が必要な予定を確認してください
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcomingEvents.map((event) => {
+                const response = getMyResponse(event.id);
+                const status: ResponseStatus = response?.status || "未回答";
+                const deadlinePassed = isDeadlinePassed(event);
+                const isUrgent = !response && !deadlinePassed;
+
+                return (
+                  <div
+                    key={event.id}
+                    className={`p-4 rounded-lg border transition-all ${isUrgent
+                      ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
+                      : "bg-card hover:shadow-md"
+                      } ${!deadlinePassed ? "cursor-pointer" : "opacity-60"}`}
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-base truncate">
+                            {event.title}
+                          </h3>
+                          <Badge variant="outline" className="shrink-0 text-xs">
+                            {event.type}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>
+                              {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
+                                locale: ja,
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
+                            </span>
+                          </div>
+                        </div>
+                        {response?.reason && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                            理由: {response.reason}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {getStatusBadge(status, deadlinePassed && status === "未回答")}
+                        {!deadlinePassed && (
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 全予定一覧 */}
+        <Card className="border-0 shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              予定一覧
+            </CardTitle>
+            <CardDescription>
+              予定をタップして出欠を回答してください
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {events.length === 0 ? (
+              <div className="py-12 text-center">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">予定がありません</p>
+              </div>
+            ) : (
+              events.map((event) => {
+                const response = getMyResponse(event.id);
+                const status: ResponseStatus = response?.status || "未回答";
+                const deadlinePassed = isDeadlinePassed(event);
+                const isOverdue = deadlinePassed && !response;
+
+                return (
+                  <div
+                    key={event.id}
+                    className={`p-4 rounded-lg border transition-all ${isOverdue
+                      ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/50"
+                      : "bg-card hover:shadow-md"
+                      } ${!deadlinePassed ? "cursor-pointer" : "opacity-60"}`}
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-base truncate">
+                            {event.title}
+                          </h3>
+                          <Badge variant="outline" className="shrink-0 text-xs">
+                            {event.type}
+                          </Badge>
+                          {isOverdue && (
+                            <Badge className="bg-orange-500 text-white border-0 shrink-0 text-xs">
+                              期限切れ
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>
+                              {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
+                                locale: ja,
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
+                              {deadlinePassed && " (終了)"}
+                            </span>
+                          </div>
+                        </div>
+                        {response?.reason && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                            理由: {response.reason}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {getStatusBadge(status, isOverdue)}
+                        {!deadlinePassed && (
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 回答ダイアログ */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedEvent?.title}</DialogTitle>
+            <DialogDescription>
+              {selectedEvent &&
+                format(new Date(selectedEvent.dateTime), "M月d日(E) HH:mm", {
+                  locale: ja,
+                })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <Label>出欠状況</Label>
+              <RadioGroup value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as ResponseStatus)}>
+                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="参加" id="participate" />
+                  <Label htmlFor="participate" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      <span className="font-medium">参加</span>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="遅れる" id="late" />
+                  <Label htmlFor="late" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      <span className="font-medium">遅れる</span>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="不参加" id="absent" />
+                  <Label htmlFor="absent" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-rose-500" />
+                      <span className="font-medium">不参加</span>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {(selectedStatus === "遅れる" || selectedStatus === "不参加") && (
+              <div className="space-y-3">
+                <Label htmlFor="reason">
+                  理由 <span className="text-red-500">*</span>
+                </Label>
+
+                {/* プリセットボタン */}
+                <div className="flex flex-wrap gap-2">
+                  {REASON_PRESETS[selectedStatus].map((preset) => (
+                    <Button
+                      key={preset}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReason(preset)}
+                      className={reason === preset ? "bg-primary text-primary-foreground" : ""}
+                    >
+                      {preset}
+                    </Button>
+                  ))}
+                </div>
+
+                <Textarea
+                  id="reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="理由を入力してください"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDialogOpen(false)}
+              className="w-full sm:w-auto"
+              disabled={saving}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleSaveResponse}
+              className="w-full sm:w-auto"
+              disabled={saving}
+            >
+              {saving ? "保存中..." : "回答を保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -9,15 +9,14 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import type { Event, Response, Announcement, ResponseLog, EventTemplate, ReminderSetting } from "./types";
+import type { Event, Response, Announcement, ResponseLog, SharedResponse } from "./types";
 
 // コレクション参照
 const eventsCollection = collection(db, "events");
 const responsesCollection = collection(db, "responses");
 const announcementsCollection = collection(db, "announcements");
 const responseLogsCollection = collection(db, "responseLogs");
-const templatesCollection = collection(db, "eventTemplates");
-const remindersCollection = collection(db, "reminders");
+const sharedResponsesCollection = collection(db, "sharedResponses");
 
 // イベント関連の関数
 
@@ -317,87 +316,58 @@ export async function getResponseLogsForEvent(eventId: string): Promise<Response
   return logs.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
 }
 
-// テンプレート関連の関数
+// 共有リンク関連の関数
 
 /**
- * イベントテンプレートを作成
+ * 予定の共有リンクを生成
  */
-export async function createEventTemplate(template: Omit<EventTemplate, "id" | "createdAt">): Promise<string> {
-  const templateRef = doc(templatesCollection);
-  const templateId = templateRef.id;
+export async function createSharedResponse(sharedResponse: Omit<SharedResponse, "id" | "createdAt">): Promise<string> {
+  const sharedRef = doc(sharedResponsesCollection);
+  const sharedId = sharedRef.id;
 
-  const templateData: EventTemplate = {
-    ...template,
-    id: templateId,
+  const sharedData: SharedResponse = {
+    ...sharedResponse,
+    id: sharedId,
     createdAt: new Date().toISOString(),
   };
 
-  await setDoc(templateRef, templateData);
-  return templateId;
+  await setDoc(sharedRef, sharedData);
+  return sharedId;
 }
 
 /**
- * すべてのテンプレートを取得
+ * トークンから共有予定を取得
  */
-export async function getAllEventTemplates(): Promise<EventTemplate[]> {
-  const querySnapshot = await getDocs(templatesCollection);
-
-  const templates: EventTemplate[] = [];
-  querySnapshot.forEach((doc) => {
-    templates.push(doc.data() as EventTemplate);
-  });
-
-  return templates;
-}
-
-/**
- * テンプレートを削除
- */
-export async function deleteEventTemplate(templateId: string): Promise<void> {
-  const templateRef = doc(templatesCollection, templateId);
-  await deleteDoc(templateRef);
-}
-
-// リマインダー関連の関数
-
-/**
- * リマインダーを作成
- */
-export async function createReminder(reminder: Omit<ReminderSetting, "id">): Promise<string> {
-  const reminderRef = doc(remindersCollection);
-  const reminderId = reminderRef.id;
-
-  const reminderData: ReminderSetting = {
-    ...reminder,
-    id: reminderId,
-  };
-
-  await setDoc(reminderRef, reminderData);
-  return reminderId;
-}
-
-/**
- * 未送信のリマインダーを取得
- */
-export async function getUnsentReminders(): Promise<ReminderSetting[]> {
-  const q = query(remindersCollection, where("sent", "==", false));
+export async function getSharedResponseByToken(shareToken: string): Promise<SharedResponse | null> {
+  const q = query(sharedResponsesCollection, where("shareToken", "==", shareToken));
   const querySnapshot = await getDocs(q);
 
-  const reminders: ReminderSetting[] = [];
-  querySnapshot.forEach((doc) => {
-    reminders.push(doc.data() as ReminderSetting);
-  });
+  if (querySnapshot.empty) {
+    return null;
+  }
 
-  return reminders;
+  return querySnapshot.docs[0].data() as SharedResponse;
 }
 
 /**
- * リマインダーを送信済みにマーク
+ * 特定の予定の共有リンクを取得
  */
-export async function markReminderAsSent(reminderId: string): Promise<void> {
-  const reminderRef = doc(remindersCollection, reminderId);
-  await setDoc(reminderRef, {
-    sent: true,
-    sentAt: new Date().toISOString(),
-  }, { merge: true });
+export async function getSharedResponsesForEvent(eventId: string): Promise<SharedResponse[]> {
+  const q = query(sharedResponsesCollection, where("eventId", "==", eventId));
+  const querySnapshot = await getDocs(q);
+
+  const shared: SharedResponse[] = [];
+  querySnapshot.forEach((doc) => {
+    shared.push(doc.data() as SharedResponse);
+  });
+
+  return shared;
+}
+
+/**
+ * 共有リンクを削除
+ */
+export async function deleteSharedResponse(sharedId: string): Promise<void> {
+  const sharedRef = doc(sharedResponsesCollection, sharedId);
+  await deleteDoc(sharedRef);
 }

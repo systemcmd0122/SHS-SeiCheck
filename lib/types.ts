@@ -95,24 +95,12 @@ export interface ResponseLog {
   newReason?: string;
 }
 
-// テンプレートの型定義
-export interface EventTemplate {
-  id: string;
-  name: string;
-  type: EventType;
-  timeHour: number;
-  timeMinute: number;
-  deadlineHoursBefore: number;
-  createdAt: string;
-  createdBy: string;
-}
-
-// リマインダー設定
-export interface ReminderSetting {
+// 共有リンク用の型定義
+export interface SharedResponse {
   id: string;
   eventId: string;
-  memberId: string;
-  reminderTime: number; // 締切前の時間数
-  sent: boolean;
-  sentAt?: string;
+  shareToken: string; // 共有トークン
+  createdAt: string;
+  createdBy: string;
+  expiresAt?: string; // 有効期限（オプション）
 }

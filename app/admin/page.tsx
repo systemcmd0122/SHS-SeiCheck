@@ -21,6 +21,7 @@ import {
   Home,
   TrendingUp,
   History,
+  Share2,
 } from "lucide-react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
@@ -62,8 +63,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { StatisticsPanel } from "@/components/StatisticsPanel";
 import { HistoryPanel } from "@/components/HistoryPanel";
-import { ReminderPanel } from "@/components/ReminderPanel";
-import { TemplatesPanel } from "@/components/TemplatesPanel";
+import { SharePanel } from "@/components/SharePanel";
 import { members } from "@/lib/members";
 import {
   getAllEvents,
@@ -74,11 +74,8 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  getAllEventTemplates,
-  createEventTemplate,
-  deleteEventTemplate,
 } from "@/lib/db";
-import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority, EventTemplate } from "@/lib/types";
+import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -90,7 +87,6 @@ export default function AdminPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [templates, setTemplates] = useState<EventTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEventType, setSelectedEventType] = useState<EventType | "全て">("全て");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -98,6 +94,7 @@ export default function AdminPage() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("events");
+  const [selectedEventForShare, setSelectedEventForShare] = useState<Event | null>(null);
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -116,16 +113,14 @@ export default function AdminPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [eventsData, responsesData, announcementsData, templatesData] = await Promise.all([
+      const [eventsData, responsesData, announcementsData] = await Promise.all([
         getAllEvents(),
         getAllResponses(),
         getAllAnnouncements(),
-        getAllEventTemplates(),
       ]);
       setEvents(eventsData);
       setResponses(responsesData);
       setAnnouncements(announcementsData);
-      setTemplates(templatesData);
     } catch (error) {
       console.error("データ読み込みエラー:", error);
     } finally {
@@ -931,25 +926,11 @@ export default function AdminPage() {
                 <span className="hidden sm:inline">統計</span>
               </TabsTrigger>
               <TabsTrigger
-                value="reminder"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">リマインダー</span>
-              </TabsTrigger>
-              <TabsTrigger
                 value="history"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
               >
                 <History className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">履歴</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="templates"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">テンプレート</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1209,14 +1190,25 @@ export default function AdminPage() {
                               </div>
                             </CardDescription>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                            onClick={() => handleDeleteEvent(event.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedEventForShare(event)}
+                              className="gap-2"
+                            >
+                              <Share2 className="h-4 w-4" />
+                              <span className="hidden sm:inline">共有</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                              onClick={() => handleDeleteEvent(event.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardHeader>
 
@@ -1442,72 +1434,39 @@ export default function AdminPage() {
             <StatisticsPanel events={events} responses={responses} />
           </TabsContent>
 
-          {/* リマインダータブ */}
-          <TabsContent value="reminder" className="space-y-4">
-            <ReminderPanel events={events} responses={responses} members={members} />
-          </TabsContent>
-
           {/* 履歴タブ */}
           <TabsContent value="history" className="space-y-4">
             <HistoryPanel events={events} responses={responses} members={members} />
           </TabsContent>
-
-          {/* テンプレートタブ */}
-          <TabsContent value="templates" className="space-y-4">
-            <TemplatesPanel
-              templates={templates}
-              onAddTemplate={async (template) => {
-                try {
-                  await createEventTemplate({
-                    ...template,
-                    createdBy: "admin",
-                  });
-                  await loadData();
-                } catch (error) {
-                  console.error("テンプレート作成エラー:", error);
-                  alert("テンプレートの作成に失敗しました");
-                }
-              }}
-              onDeleteTemplate={async (templateId) => {
-                if (!confirm("このテンプレートを削除してもよろしいですか?")) {
-                  return;
-                }
-                try {
-                  await deleteEventTemplate(templateId);
-                  await loadData();
-                } catch (error) {
-                  console.error("テンプレート削除エラー:", error);
-                  alert("テンプレートの削除に失敗しました");
-                }
-              }}
-              onCreateFromTemplate={async (template) => {
-                // テンプレートから予定を生成
-                const today = new Date();
-                const dateStr = today.toISOString().split("T")[0];
-
-                const time = `${String(template.timeHour).padStart(2, "0")}:${String(template.timeMinute).padStart(2, "0")}`;
-                const deadline = new Date(today);
-                deadline.setHours(deadline.getHours() + template.deadlineHoursBefore);
-                const deadlineStr = deadline.toISOString().split("T")[0];
-
-                try {
-                  await createEvent({
-                    title: template.name,
-                    type: template.type,
-                    dateTime: `${dateStr}T${time}:00`,
-                    deadline: `${deadlineStr}T23:59:00`,
-                    createdBy: "admin",
-                  });
-                  await loadData();
-                  alert(`「${template.name}」から予定を作成しました`);
-                } catch (error) {
-                  console.error("予定作成エラー:", error);
-                  alert("予定の作成に失敗しました");
-                }
-              }}
-            />
-          </TabsContent>
         </Tabs>
+
+        {/* 共有ダイアログ */}
+        <Dialog open={!!selectedEventForShare} onOpenChange={(open) => {
+          if (!open) setSelectedEventForShare(null);
+        }}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Share2 className="w-5 h-5" />
+                {selectedEventForShare?.title || ""}の共有
+              </DialogTitle>
+              <DialogDescription>
+                このイベントへの回答フォームを共有できます
+              </DialogDescription>
+            </DialogHeader>
+            {selectedEventForShare && (
+              <SharePanel
+                event={selectedEventForShare}
+                onShareCreated={() => {
+                  // 必要に応じて更新処理
+                }}
+                onShareDeleted={() => {
+                  // 必要に応じて更新処理
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

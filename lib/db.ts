@@ -102,16 +102,34 @@ export async function deleteEvent(eventId: string): Promise<void> {
  * 回答を作成または更新
  */
 export async function saveResponse(response: Response): Promise<void> {
-  // eventId と memberId を組み合わせてユニークなIDを作成
-  const responseId = `${response.eventId}_${response.memberId}`;
-  const responseRef = doc(responsesCollection, responseId);
+  try {
+    // eventId と memberId を組み合わせてユニークなIDを作成
+    const responseId = `${response.eventId}_${response.memberId}`;
+    const responseRef = doc(responsesCollection, responseId);
 
-  const responseData = {
-    ...response,
-    updatedAt: new Date().toISOString(),
-  };
+    const responseData: any = {
+      eventId: response.eventId,
+      memberId: response.memberId,
+      status: response.status,
+      updatedAt: new Date().toISOString(),
+      updatedBy: response.updatedBy,
+    };
 
-  await setDoc(responseRef, responseData);
+    // reason が存在して空でない場合のみ追加
+    if (response.reason && response.reason.trim()) {
+      responseData.reason = response.reason.trim();
+    }
+
+    await setDoc(responseRef, responseData);
+    console.log("✓ 回答を保存しました:", responseId);
+  } catch (error) {
+    console.error("✗ 回答保存エラー:", error);
+    throw new Error(
+      error instanceof Error
+        ? `回答の保存に失敗しました: ${error.message}`
+        : "回答の保存に失敗しました"
+    );
+  }
 }
 
 /**

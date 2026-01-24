@@ -128,19 +128,28 @@ export default function MemberDashboard() {
         eventId: selectedEvent.id,
         memberId: memberId,
         status: selectedStatus,
-        reason: reason.trim() || undefined,
         updatedAt: new Date().toISOString(),
         updatedBy: memberId,
       };
 
+      // reason が空でない場合のみ追加
+      if (reason.trim()) {
+        responseData.reason = reason.trim();
+      }
+
+      console.log("📝 回答を保存中:", responseData);
       await saveResponse(responseData);
+      console.log("✓ 回答保存成功");
       await loadData();
       setDialogOpen(false);
       setSelectedEvent(null);
       setReason("");
+      alert("回答を保存しました");
     } catch (error) {
-      console.error("回答保存エラー:", error);
-      alert("回答の保存に失敗しました");
+      console.error("✗ 回答保存エラー:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "回答の保存に失敗しました";
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }

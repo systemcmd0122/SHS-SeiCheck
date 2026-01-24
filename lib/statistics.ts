@@ -1,4 +1,6 @@
 import type { Event, Response, Member } from "./types";
+import { getAllEvents, getResponsesForEvent } from "./db";
+import { members } from "./members";
 
 /**
  * 参加率の計算
@@ -104,4 +106,45 @@ export function generateChartData(
                 unanswered,
             };
         });
+}
+
+/**
+ * 全体統計情報を取得
+ */
+export async function getStatistics() {
+    try {
+        const allEvents = await getAllEvents();
+        const totalMembers = members.length;
+
+        let participated = 0;
+        let late = 0;
+        let absent = 0;
+        let unanswered = 0;
+
+        // 全イベントの回答を集計
+        for (const event of allEvents) {
+            const responses = await getResponsesForEvent(event.id);
+            participated += responses.filter((r) => r.status === "参加").length;
+            late += responses.filter((r) => r.status === "遅れる").length;
+            absent += responses.filter((r) => r.status === "不参加").length;
+            unanswered += responses.filter((r) => r.status === "未回答").length;
+        }
+
+        return {
+            participated,
+            late,
+            absent,
+            unanswered,
+            total: totalMembers,
+        };
+    } catch (error) {
+        console.error("Failed to get statistics:", error);
+        return {
+            participated: 0,
+            late: 0,
+            absent: 0,
+            unanswered: 0,
+            total: members.length,
+        };
+    }
 }

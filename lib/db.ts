@@ -19,6 +19,7 @@ const responsesCollection = collection(db, "responses");
 const announcementsCollection = collection(db, "announcements");
 const responseLogsCollection = collection(db, "responseLogs");
 const sharedResponsesCollection = collection(db, "sharedResponses");
+const todayTasksCollection = collection(db, "todayTasks");
 
 // イベント関連の関数
 
@@ -462,5 +463,93 @@ export function subscribeToAnnouncement(announcementId: string, callback: (annou
     } else {
       callback(null);
     }
+  });
+}
+
+// 今日することタスク関連の関数
+
+/**
+ * 今日のタスクを追加
+ */
+export async function addTodayTask(title: string): Promise<string> {
+  const taskRef = doc(todayTasksCollection);
+  const taskId = taskRef.id;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const taskData = {
+    id: taskId,
+    title,
+    createdAt: new Date().toISOString(),
+    date: today.toISOString().split("T")[0], // YYYY-MM-DD形式
+  };
+
+  await setDoc(taskRef, taskData);
+  return taskId;
+}
+
+/**
+ * 今日のタスクをすべて取得
+ */
+export async function getTodayTasks(): Promise<any[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+
+  const q = query(todayTasksCollection, where("date", "==", todayStr));
+  const querySnapshot = await getDocs(q);
+
+  const tasks: any[] = [];
+  querySnapshot.forEach((doc) => {
+    tasks.push(doc.data());
+  });
+
+  return tasks;
+}
+
+/**
+ * 今日のタスクを削除
+ */
+export async function deleteTodayTask(taskId: string): Promise<void> {
+  const taskRef = doc(todayTasksCollection, taskId);
+  await deleteDoc(taskRef);
+}
+
+/**
+ * 期限切れタスクを削除
+ */
+export async function deleteExpiredTasks(): Promise<void> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+
+  const q = query(todayTasksCollection, where("date", "<", todayStr));
+  const querySnapshot = await getDocs(q);
+
+  for (const docSnapshot of querySnapshot.docs) {
+    await deleteDoc(docSnapshot.ref);
+  }
+}
+
+/**
+ * 今日のタスクをリアルタイムで監視
+ */
+export function listenTodayTasks(callback: (tasks: any[]) => void): Unsubscribe {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+
+  const q = query(todayTasksCollection, where("date", "==", todayStr));
+
+  return onSnapshot(q, (querySnapshot) => {
+    const tasks: any[] = [];
+    querySnapshot.forEach((doc) => {
+      tasks.push(doc.data());
+    });
+    // 作成日時でソート
+    tasks.sort((a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    callback(tasks);
   });
 }

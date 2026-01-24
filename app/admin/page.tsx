@@ -22,6 +22,8 @@ import {
   TrendingUp,
   History,
   Share2,
+  Monitor,
+  ListTodo,
 } from "lucide-react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
@@ -964,6 +966,31 @@ export default function AdminPage() {
                 <History className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">履歴</span>
               </TabsTrigger>
+              <TabsTrigger
+                value="share"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">シェア</span>
+              </TabsTrigger>
+              <a
+                href="/tv-dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted"
+                style={{ textDecoration: "none" }}
+              >
+                <Monitor className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">テレビ画面</span>
+              </a>
+              <a
+                href="/admin/events"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted"
+                style={{ textDecoration: "none" }}
+              >
+                <ListTodo className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">一時予定追加</span>
+              </a>
             </TabsList>
           </div>
 

@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
+import { listenTodayTasks } from "@/lib/db";
 
 interface TempEvent {
     id: string;
@@ -16,45 +17,48 @@ export default function AdminEventsPage() {
     const [title, setTitle] = useState("");
 
     useEffect(() => {
-        const fetchEvents = async () => {
-            const res = await fetch("/api/temp-events", { cache: "no-store" });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && Array.isArray(data.data)) {
-                    setEvents(data.data);
-                }
-            }
-        };
-        fetchEvents();
-        const interval = setInterval(fetchEvents, 30000);
-        return () => clearInterval(interval);
+        // リアルタイムリスナーで今日のタスクを監視
+        const unsubscribe = listenTodayTasks((tasks) => {
+            setEvents(tasks as TempEvent[]);
+        });
+        return () => unsubscribe();
     }, []);
 
     const addEvent = async () => {
         if (!title.trim()) return;
-        const res = await fetch("/api/temp-events", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title,
-                dateTime: new Date().toISOString(),
-                type: "臨時"
-            }),
-        });
-        if (res.ok) {
-            setTitle("");
-            const data = await res.json();
-            setEvents((prev) => [...prev, data.data]);
+        try {
+            const res = await fetch("/api/temp-events", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title.trim(),
+                    dateTime: new Date().toISOString(),
+                    type: "臨時"
+                }),
+            });
+            if (res.ok) {
+                setTitle("");
+                // リアルタイムリスナーが自動的に更新するので、手動更新は不要
+            }
+        } catch (error) {
+            console.error("Failed to add event:", error);
         }
     };
 
     const removeEvent = async (id: string) => {
-        await fetch("/api/temp-events", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id }),
-        });
-        setEvents((prev) => prev.filter((e) => e.id !== id));
+        try {
+            const res = await fetch("/api/temp-events", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+            });
+            if (!res.ok) {
+                console.error("Failed to delete event");
+            }
+            // リアルタイムリスナーが自動的に更新するので、手動更新は不要
+        } catch (error) {
+            console.error("Failed to remove event:", error);
+        }
     };
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8">

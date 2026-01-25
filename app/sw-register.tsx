@@ -19,6 +19,29 @@ export function SwRegister() {
                         scope: '/',
                     });
                     console.log('✓ Service Worker registered:', registration);
+
+                    // 定期的にアップデートをチェック（開発環境では5秒ごと）
+                    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168');
+                    const checkInterval = isDevelopment ? 5000 : 60000; // 開発環境: 5秒, 本番環境: 60秒
+
+                    setInterval(() => {
+                        registration.update().then(() => {
+                            console.log('✓ Service Worker update check completed');
+                        }).catch((err) => {
+                            console.error('✗ Service Worker update check failed:', err);
+                        });
+                    }, checkInterval);
+
+                    // Service Workerが更新されたときの処理
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker?.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('✓ New Service Worker installed, page reload recommended');
+                                // ユーザーに更新を促すメッセージを表示する場合はここで処理
+                            }
+                        });
+                    });
                 }
             } catch (error) {
                 console.error('✗ Service Worker registration failed:', error);

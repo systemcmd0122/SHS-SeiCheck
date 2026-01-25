@@ -217,45 +217,45 @@ export function EventCalendar({
             </Card>
             {/* 日付詳細ダイアログ */}
             <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl">
+                <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-4 sm:p-6">
+                    <DialogHeader className="flex-shrink-0">
+                        <DialogTitle className="text-lg sm:text-xl">
                             {selectedDate ? format(selectedDate, "yyyy年M月d日(E)", { locale: ja }) : ""}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-sm sm:text-base">
                             この日付の予定一覧
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
+                    <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
                         {/* 独自DB予定 */}
                         {selectedDateDBEvents.length > 0 && (
                             <div>
-                                <h3 className="font-semibold text-sm mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
-                                    <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-600"></div>
-                                    出欠確認予定 ({selectedDateDBEvents.length}件)
+                                <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
+                                    <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-600 flex-shrink-0"></div>
+                                    <span>出欠確認予定 ({selectedDateDBEvents.length}件)</span>
                                 </h3>
                                 <div className="space-y-2">
                                     {selectedDateDBEvents.map((event) => (
                                         <div
                                             key={event.id}
-                                            className="p-3 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer transition-colors dark:border-green-800/60 dark:bg-green-900/20 dark:hover:bg-green-900/40"
+                                            className="p-3 sm:p-4 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 cursor-pointer transition-colors dark:border-green-800/60 dark:bg-green-900/20 dark:hover:bg-green-900/40"
                                             onClick={() => {
                                                 onEventClick?.(event);
                                                 setSelectedDate(null);
                                             }}
                                         >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium text-sm">{event.title}</h4>
-                                                    <p className="text-xs text-muted-foreground mt-1">
+                                            <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
+                                                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                                                         {format(new Date(event.dateTime), "HH:mm", { locale: ja })}
                                                     </p>
                                                     <Badge variant="outline" className="mt-2 text-xs">
                                                         {event.type}
                                                     </Badge>
                                                 </div>
-                                                <span className="text-xl">→</span>
+                                                <span className="text-lg sm:text-xl flex-shrink-0">→</span>
                                             </div>
                                         </div>
                                     ))}
@@ -266,22 +266,22 @@ export function EventCalendar({
                         {/* Google Calendar予定 */}
                         {selectedDateGoogleEvents.length > 0 && (
                             <div>
-                                <h3 className="font-semibold text-sm mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-600"></div>
-                                    Google Calendar ({selectedDateGoogleEvents.length}件)
+                                <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                                    <div className="w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-600 flex-shrink-0"></div>
+                                    <span>Google Calendar ({selectedDateGoogleEvents.length}件)</span>
                                 </h3>
                                 <div className="space-y-2">
                                     {selectedDateGoogleEvents.map((event) => (
                                         <div
                                             key={event.id}
-                                            className="p-3 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20"
+                                            className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20"
                                         >
-                                            <h4 className="font-medium text-sm">{event.title}</h4>
-                                            <p className="text-xs text-muted-foreground mt-1">
+                                            <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
+                                            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                                                 {format(new Date(event.startTime), "HH:mm")} 〜 {format(new Date(event.endTime), "HH:mm")}
                                             </p>
                                             {event.description && (
-                                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                                <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
                                                     {event.description}
                                                 </p>
                                             )}
@@ -300,9 +300,9 @@ export function EventCalendar({
                         )}
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-4 border-t flex-shrink-0">
                         <DialogClose asChild>
-                            <Button variant="outline">
+                            <Button variant="outline" size="sm" className="mt-2">
                                 <X className="w-4 h-4 mr-2" />
                                 閉じる
                             </Button>

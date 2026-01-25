@@ -2,8 +2,14 @@ const CACHE_NAME = 'shs-sei-check-v1';
 const RUNTIME_CACHE = 'shs-sei-check-runtime';
 const ASSETS_CACHE = 'shs-sei-check-assets';
 
+// 開発環境判定
+const isDevelopment = self.location.origin.includes('localhost') || self.location.origin.includes('192.168');
+
+console.log('[SW] Environment:', isDevelopment ? 'Development' : 'Production');
+
 // インストールイベント
 self.addEventListener('install', (event) => {
+    console.log('[SW] Installing Service Worker');
     event.waitUntil(
         Promise.all([
             caches.open(CACHE_NAME).then((cache) => {
@@ -23,6 +29,7 @@ self.addEventListener('install', (event) => {
 
 // アクティベーションイベント
 self.addEventListener('activate', (event) => {
+    console.log('[SW] Activating Service Worker');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
@@ -65,89 +72,147 @@ self.addEventListener('fetch', (event) => {
 
     // HTMLページ（navigate）はネットワーク優先
     if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    if (response && response.status === 200) {
-                        const responseToCache = response.clone();
-                        caches.open(RUNTIME_CACHE).then((cache) => {
-                            cache.put(request, responseToCache);
+        if (isDevelopment) {
+            event.respondWith(
+                fetch(request, { cache: 'no-store' })
+                    .then((response) => {
+                        console.log('[SW] Navigate (dev):', url.pathname, response.status);
+                        return response;
+                    })
+                    .catch((error) => {
+                        console.log('[SW] Navigate offline:', url.pathname);
+                        return caches.match(request).then((response) => {
+                            return response || new Response('オフラインです', { status: 503 });
                         });
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(request).then((response) => {
-                        return response || new Response('オフラインです', { status: 503 });
-                    });
-                })
-        );
+                    })
+            );
+        } else {
+            event.respondWith(
+                fetch(request)
+                    .then((response) => {
+                        if (response && response.status === 200) {
+                            const responseToCache = response.clone();
+                            caches.open(RUNTIME_CACHE).then((cache) => {
+                                cache.put(request, responseToCache);
+                            });
+                        }
+                        return response;
+                    })
+                    .catch(() => {
+                        return caches.match(request).then((response) => {
+                            return response || new Response('オフラインです', { status: 503 });
+                        });
+                    })
+            );
+        }
         return;
     }
 
     // API呼び出しはネットワーク優先、キャッシュフォールバック
     if (url.pathname.startsWith('/api/')) {
-        event.respondWith(
-            fetch(request, { priority: 'high' })
-                .then((response) => {
-                    if (response && response.status === 200) {
-                        const responseToCache = response.clone();
-                        caches.open(RUNTIME_CACHE).then((cache) => {
-                            cache.put(request, responseToCache);
-                        });
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(request) || new Response('オフラインです', { status: 503 });
-                })
-        );
+        if (isDevelopment) {
+            event.respondWith(
+                fetch(request, { priority: 'high', cache: 'no-store' })
+                    .then((response) => {
+                        console.log('[SW] API (dev):', url.pathname, response.status);
+                        return response;
+                    })
+                    .catch((error) => {
+                        console.log('[SW] API offline:', url.pathname);
+                        return caches.match(request) || new Response('オフラインです', { status: 503 });
+                    })
+            );
+        } else {
+            event.respondWith(
+                fetch(request, { priority: 'high' })
+                    .then((response) => {
+                        if (response && response.status === 200) {
+                            const responseToCache = response.clone();
+                            caches.open(RUNTIME_CACHE).then((cache) => {
+                                cache.put(request, responseToCache);
+                            });
+                        }
+                        return response;
+                    })
+                    .catch(() => {
+                        return caches.match(request) || new Response('オフラインです', { status: 503 });
+                    })
+            );
+        }
         return;
     }
 
     // JS, CSS はキャッシュ優先、ネットワークフォールバック
     if (url.pathname.match(/\.(js|css)$/)) {
-        event.respondWith(
-            caches.match(request).then((response) => {
-                return (
-                    response ||
-                    fetch(request, { priority: 'high' }).then((response) => {
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(ASSETS_CACHE).then((cache) => {
-                                cache.put(request, responseToCache);
-                            });
-                        }
+        if (isDevelopment) {
+            event.respondWith(
+                fetch(request, { priority: 'high', cache: 'no-store' })
+                    .then((response) => {
+                        console.log('[SW] Asset (dev):', url.pathname, response.status);
                         return response;
                     })
-                );
-            }).catch(() => {
-                return new Response('', { status: 404 });
-            })
-        );
+                    .catch(() => {
+                        console.log('[SW] Asset offline:', url.pathname);
+                        return new Response('', { status: 404 });
+                    })
+            );
+        } else {
+            event.respondWith(
+                caches.match(request).then((response) => {
+                    return (
+                        response ||
+                        fetch(request, { priority: 'high' }).then((response) => {
+                            if (response && response.status === 200) {
+                                const responseToCache = response.clone();
+                                caches.open(ASSETS_CACHE).then((cache) => {
+                                    cache.put(request, responseToCache);
+                                });
+                            }
+                            return response;
+                        })
+                    );
+                }).catch(() => {
+                    return new Response('', { status: 404 });
+                })
+            );
+        }
         return;
     }
 
     // 画像はキャッシュ優先
     if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/)) {
-        event.respondWith(
-            caches.match(request).then((response) => {
-                return (
-                    response ||
-                    fetch(request, { priority: 'low' }).then((response) => {
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(ASSETS_CACHE).then((cache) => {
-                                cache.put(request, responseToCache);
-                            });
-                        }
+        if (isDevelopment) {
+            event.respondWith(
+                fetch(request, { priority: 'low', cache: 'no-store' })
+                    .then((response) => {
+                        console.log('[SW] Image (dev):', url.pathname, response.status);
                         return response;
                     })
-                );
-            }).catch(() => {
-                return new Response('', { status: 404 });
-            })
-        );
+                    .catch(() => {
+                        console.log('[SW] Image offline:', url.pathname);
+                        return new Response('', { status: 404 });
+                    })
+            );
+        } else {
+            event.respondWith(
+                caches.match(request).then((response) => {
+                    return (
+                        response ||
+                        fetch(request, { priority: 'low' }).then((response) => {
+                            if (response && response.status === 200) {
+                                const responseToCache = response.clone();
+                                caches.open(ASSETS_CACHE).then((cache) => {
+                                    cache.put(request, responseToCache);
+                                });
+                            }
+                            return response;
+                        })
+                    );
+                }).catch(() => {
+                    return new Response('', { status: 404 });
+                })
+            );
+        }
         return;
     }
 
@@ -171,4 +236,5 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
 

@@ -100,24 +100,24 @@ export function MemberSelectionPage({
     const lastMember = lastMemberId ? members.find((m) => m.id === lastMemberId) : null;
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-4">
             {/* 前回ユーザー確認ダイアログ */}
             <Dialog open={showContinueDialog} onOpenChange={setShowContinueDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>前回のログイン情報</DialogTitle>
-                        <DialogDescription>
+                <DialogContent className="w-[95vw] sm:max-w-md p-4 sm:p-6">
+                    <DialogHeader className="space-y-2">
+                        <DialogTitle className="text-lg sm:text-xl">前回のログイン情報</DialogTitle>
+                        <DialogDescription className="text-sm sm:text-base">
                             前回このユーザーでログインしました
                         </DialogDescription>
                     </DialogHeader>
                     {lastMember && (
                         <div className="py-4">
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 flex-shrink-0">
                                     <UserCircle className="w-6 h-6 text-primary" />
                                 </div>
-                                <div>
-                                    <p className="font-medium">{lastMember.name}</p>
+                                <div className="min-w-0">
+                                    <p className="font-medium text-sm sm:text-base truncate">{lastMember.name}</p>
                                     <p className="text-xs text-muted-foreground">
                                         {lastMember.committee}
                                     </p>
@@ -125,20 +125,20 @@ export function MemberSelectionPage({
                             </div>
                         </div>
                     )}
-                    <DialogFooter className="flex gap-2 flex-row-reverse">
-                        <Button onClick={handleContinueWithLast}>
+                    <DialogFooter className="flex flex-col gap-2 sm:flex-row justify-end pt-4 border-t">
+                        <Button onClick={handleSelectNew} variant="outline" className="w-full sm:w-auto order-2 sm:order-1" size="sm">
+                            別のユーザーを選択
+                        </Button>
+                        <Button onClick={handleContinueWithLast} className="w-full sm:w-auto order-1 sm:order-2" size="sm">
                             <LogIn className="w-4 h-4 mr-2" />
                             続ける
-                        </Button>
-                        <Button variant="outline" onClick={handleSelectNew}>
-                            別のユーザーを選択
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
             {showAdminButton && (
-                <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -152,12 +152,12 @@ export function MemberSelectionPage({
             )}
 
             <div className="w-full max-w-md space-y-6">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6 sm:mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                         <UserCircle className="w-10 h-10 text-primary" />
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
-                    <p className="text-muted-foreground">{description}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">{title}</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
                 </div>
 
                 {/* 今日の予定表示 */}
@@ -170,19 +170,19 @@ export function MemberSelectionPage({
                 )}
 
                 <Card className="border-0 shadow-xl">
-                    <CardHeader className="space-y-1 pb-4">
-                        <CardTitle className="text-xl">ようこそ</CardTitle>
-                        <CardDescription>
+                    <CardHeader className="space-y-1 pb-3 sm:pb-4">
+                        <CardTitle className="text-lg sm:text-xl">ようこそ</CardTitle>
+                        <CardDescription className="text-sm">
                             あなたの名前を選択してください
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-4 sm:px-6">
                         <div className="space-y-2">
                             <Select onValueChange={handleSelect} value={selectedMemberId || ""}>
-                                <SelectTrigger className="h-12">
+                                <SelectTrigger className="h-12 text-base">
                                     <SelectValue placeholder="名前を選択..." />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px]">
                                     {members.map((member) => (
                                         <SelectItem key={member.id} value={member.id}>
                                             <div className="flex flex-col items-start">
@@ -198,7 +198,7 @@ export function MemberSelectionPage({
                         </div>
 
                         <Button
-                            className="w-full h-12 text-base"
+                            className="w-full h-12 sm:h-11 text-base"
                             onClick={handleStart}
                             disabled={!selectedMemberId}
                             size="lg"
@@ -209,7 +209,7 @@ export function MemberSelectionPage({
                     </CardContent>
                 </Card>
 
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-xs sm:text-sm text-muted-foreground">
                     生徒会専用システム
                 </p>
             </div>

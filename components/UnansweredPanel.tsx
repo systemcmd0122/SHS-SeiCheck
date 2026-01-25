@@ -20,15 +20,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import { ShareLinkDialog } from "@/components/CommonDialogs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { members } from "@/lib/members";
@@ -72,19 +64,51 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
 
             setShareLink(shareLink);
 
-            // メッセージに未回答者の名前を組み込む
-            const unansweredNames = unansweredMembers.map((m) => m.name).join("さんと");
+            // メッセージに未回答者の苗字を組み込む
+            const unansweredNames = unansweredMembers.map((m) => m.name.split(" ")[0]).join("さんと");
             const defaultMessage = `【回答のお願い】\n\n${unansweredNames}さんがまだ未回答です！\n\n予定「${event.title}」への回答をお願いします。\n下記のリンクから簡単に回答できます：\n\n${shareLink}\n\n締切：${format(new Date(event.deadline), "yyyy年M月d日 HH:mm", { locale: ja })}`;
             setShareMessage(defaultMessage);
+
+            // ダイアログを開く
+            setIsShareDialogOpen(true);
         } catch (error) {
             console.error("共有リンク取得エラー:", error);
             alert("共有リンクの取得に失敗しました");
         }
     };
 
+    // フォールバック関数：古いやり方でクリップボードにコピー
+    const copyToClipboardFallback = (text: string) => {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+
+        try {
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand("copy");
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (error) {
+            document.body.removeChild(textArea);
+            return false;
+        }
+    };
+
     const handleCopyLink = async () => {
         try {
-            await navigator.clipboard.writeText(shareLink);
+            // まず新しい Clipboard API を試す
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(shareLink);
+            } else {
+                // フォールバック：古い方法を使う
+                if (!copyToClipboardFallback(shareLink)) {
+                    throw new Error("クリップボードコピーに失敗しました");
+                }
+            }
             setCopiedLink(true);
             setTimeout(() => setCopiedLink(false), 2000);
         } catch (error) {
@@ -95,7 +119,15 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
 
     const handleCopyMessage = async () => {
         try {
-            await navigator.clipboard.writeText(shareMessage);
+            // まず新しい Clipboard API を試す
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(shareMessage);
+            } else {
+                // フォールバック：古い方法を使う
+                if (!copyToClipboardFallback(shareMessage)) {
+                    throw new Error("クリップボードコピーに失敗しました");
+                }
+            }
             setCopiedMessage(true);
             setTimeout(() => setCopiedMessage(false), 2000);
         } catch (error) {
@@ -153,94 +185,71 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                 </div>
 
                 {/* 共有リンク機能 */}
-                <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button
-                            className="w-full"
-                            variant={isOverdue ? "destructive" : "default"}
-                            onClick={handleGenerateShareLink}
-                        >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            共有リンクで回答を促す
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle>共有リンクを生成</DialogTitle>
-                            <DialogDescription>
-                                未回答者に共有できるリンクを作成します
-                            </DialogDescription>
-                        </DialogHeader>
+                <Button
+                    className="w-full"
+                    variant={isOverdue ? "destructive" : "default"}
+                    onClick={handleGenerateShareLink}
+                >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    共有リンクで回答を促す
+                </Button>
 
-                        <div className="space-y-4">
-                            {/* リンク表示・コピー */}
-                            <div className="space-y-2">
-                                <Label>共有リンク:</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        readOnly
-                                        value={shareLink}
-                                        className="text-sm"
-                                    />
-                                    <Button
-                                        size="sm"
-                                        variant={copiedLink ? "default" : "outline"}
-                                        onClick={handleCopyLink}
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        {copiedLink ? "コピー済" : "コピー"}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* メッセージプレビュー */}
-                            <div className="space-y-2">
-                                <Label>メッセージ:</Label>
-                                <div className="flex gap-2">
-                                    <textarea
-                                        readOnly
-                                        value={shareMessage}
-                                        className="flex-1 min-h-32 p-3 text-sm border rounded-md bg-muted/50"
-                                    />
-                                    <Button
-                                        size="sm"
-                                        variant={copiedMessage ? "default" : "outline"}
-                                        onClick={handleCopyMessage}
-                                        className="self-start"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        {copiedMessage ? "コピー済" : "コピー"}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* 注意事項 */}
-                            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
-                                <p className="text-blue-700 dark:text-blue-300">
-                                    💡 共有リンクを使用すれば、ログインなしで回答できます
-                                </p>
-                            </div>
+                <ShareLinkDialog
+                    isOpen={isShareDialogOpen}
+                    onOpenChange={setIsShareDialogOpen}
+                    onClose={() => {
+                        setIsShareDialogOpen(false);
+                    }}
+                >
+                    {/* リンク表示・コピー */}
+                    <div className="space-y-2">
+                        <Label>共有リンク:</Label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Input
+                                readOnly
+                                value={shareLink}
+                                className="text-sm flex-1 min-w-0"
+                            />
+                            <Button
+                                size="sm"
+                                variant={copiedLink ? "default" : "outline"}
+                                onClick={handleCopyLink}
+                                className="shrink-0"
+                            >
+                                <Copy className="w-4 h-4" />
+                                {copiedLink ? "コピー済" : "コピー"}
+                            </Button>
                         </div>
+                    </div>
 
-                        <DialogFooter className="flex-row-reverse">
+                    {/* メッセージプレビュー */}
+                    <div className="space-y-2">
+                        <Label>メッセージ:</Label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <textarea
+                                readOnly
+                                value={shareMessage}
+                                className="flex-1 min-h-32 p-3 text-sm border rounded-md bg-muted/50"
+                            />
                             <Button
-                                variant="outline"
-                                onClick={() => setIsShareDialogOpen(false)}
+                                size="sm"
+                                variant={copiedMessage ? "default" : "outline"}
+                                onClick={handleCopyMessage}
+                                className="self-start shrink-0"
                             >
-                                閉じる
+                                <Copy className="w-4 h-4" />
+                                {copiedMessage ? "コピー済" : "コピー"}
                             </Button>
-                            <Button
-                                onClick={() => {
-                                    handleCopyLink();
-                                    setIsShareDialogOpen(false);
-                                }}
-                            >
-                                <Copy className="w-4 h-4 mr-2" />
-                                リンクをコピーして閉じる
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        </div>
+                    </div>
+
+                    {/* 注意事項 */}
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
+                        <p className="text-blue-700 dark:text-blue-300">
+                            💡 共有リンクを使用すれば、ログインなしで回答できます
+                        </p>
+                    </div>
+                </ShareLinkDialog>
 
                 {/* 締切情報 */}
                 <div className="text-xs text-muted-foreground">

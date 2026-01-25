@@ -276,39 +276,39 @@ export default function SharePage() {
                 </div>
             </header>
 
-            <div className="container mx-auto p-4 space-y-6 max-w-2xl">
+            <div className="container mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 max-w-2xl">
                 {/* 予定情報 */}
                 <Card className="border-0 shadow-md">
-                    <CardHeader>
-                        <div className="flex items-start justify-between gap-3">
+                    <CardHeader className="pb-3 sm:pb-4">
+                        <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div className="flex-1 min-w-0">
-                                <CardTitle className="text-2xl mb-2">{event.title}</CardTitle>
-                                <CardDescription className="text-base space-y-2">
+                                <CardTitle className="text-lg sm:text-2xl mb-2 line-clamp-2">{event.title}</CardTitle>
+                                <CardDescription className="text-xs sm:text-sm space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline">{event.type}</Badge>
+                                        <Badge variant="outline" className="shrink-0">{event.type}</Badge>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>
-                                            開催: {format(new Date(event.dateTime), "yyyy年M月d日(E) HH:mm", {
+                                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                                        <span className="truncate">
+                                            開催: {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
                                                 locale: ja,
                                             })}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4" />
-                                        <span>
-                                            締切: {format(new Date(event.deadline), "yyyy年M月d日 HH:mm", { locale: ja })}
+                                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                                        <span className="truncate">
+                                            締切: {format(new Date(event.deadline), "M月d日 HH:mm", { locale: ja })}
                                         </span>
                                     </div>
                                 </CardDescription>
                             </div>
                         </div>
                         {deadlinePassed && (
-                            <div className="mt-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900">
-                                <div className="flex items-center gap-2">
-                                    <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                                    <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                            <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900">
+                                <div className="flex items-start gap-2 sm:gap-3">
+                                    <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs sm:text-sm font-medium text-orange-900 dark:text-orange-100">
                                         締切を過ぎています。参考までに回答することができます。
                                     </p>
                                 </div>
@@ -319,16 +319,16 @@ export default function SharePage() {
 
                 {/* メンバー一覧 */}
                 <Card className="border-0 shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5 text-primary" />
+                    <CardHeader className="pb-3 sm:pb-4">
+                        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                             あなたの出欠を回答してください
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-xs sm:text-sm">
                             下からあなたの名前を選択して回答してください
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2 sm:space-y-3">
                         {members.map((member) => {
                             const response = getMyResponse(event.id, member.id);
                             const status: ResponseStatus = response?.status || "未回答";
@@ -337,14 +337,14 @@ export default function SharePage() {
                                 <button
                                     key={member.id}
                                     onClick={() => handleMemberSelect(member.id)}
-                                    className="w-full text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 transition-all hover:border-primary hover:bg-primary/5"
+                                    className="w-full text-left p-3 sm:p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 transition-all hover:border-primary hover:bg-primary/5 active:shadow-lg"
                                 >
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <p className="font-semibold text-base">{member.name}</p>
-                                            <p className="text-sm text-muted-foreground">{member.committee}</p>
+                                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm sm:text-base truncate">{member.name}</p>
+                                            <p className="text-xs sm:text-sm text-muted-foreground truncate">{member.committee}</p>
                                         </div>
-                                        <div className="flex flex-col items-end gap-2">
+                                        <div className="flex flex-col items-end gap-1 sm:gap-2 shrink-0">
                                             {getStatusBadge(status, deadlinePassed && status === "未回答")}
                                             {response?.reason && (
                                                 <p className="text-xs text-muted-foreground line-clamp-1">
@@ -358,40 +358,38 @@ export default function SharePage() {
                         })}
                     </CardContent>
                 </Card>
-            </div>
-
-            {/* 回答ダイアログ */}
+            </div>            {/* 回答ダイアログ */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>出欠回答</DialogTitle>
-                        <DialogDescription>
+                <DialogContent className="w-[95vw] sm:max-w-lg p-4 sm:p-6 max-h-[85vh] flex flex-col">
+                    <DialogHeader className="flex-shrink-0">
+                        <DialogTitle className="text-lg sm:text-xl">出欠回答</DialogTitle>
+                        <DialogDescription className="text-sm sm:text-base">
                             {members.find((m) => m.id === selectedMemberId)?.name} の出欠を回答
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4">
-                        <div className="space-y-3">
-                            <Label className="text-base font-semibold">出欠状況</Label>
+                    <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 py-4">
+                        <div className="space-y-2 sm:space-y-3">
+                            <Label className="text-sm sm:text-base font-semibold">出欠状況</Label>
                             <RadioGroup value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as ResponseStatus)}>
-                                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+                                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent transition-colors active:shadow-md">
                                     <RadioGroupItem value="参加" id="status-attend" />
                                     <Label htmlFor="status-attend" className="flex-1 cursor-pointer">
-                                        <div className="font-medium">参加</div>
+                                        <div className="font-medium text-sm sm:text-base">参加</div>
                                         <div className="text-xs text-muted-foreground">予定通り参加します</div>
                                     </Label>
                                 </div>
-                                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+                                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent transition-colors active:shadow-md">
                                     <RadioGroupItem value="遅れる" id="status-late" />
                                     <Label htmlFor="status-late" className="flex-1 cursor-pointer">
-                                        <div className="font-medium">遅れる</div>
+                                        <div className="font-medium text-sm sm:text-base">遅れる</div>
                                         <div className="text-xs text-muted-foreground">遅れて参加します</div>
                                     </Label>
                                 </div>
-                                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent transition-colors">
+                                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent transition-colors active:shadow-md">
                                     <RadioGroupItem value="不参加" id="status-absent" />
                                     <Label htmlFor="status-absent" className="flex-1 cursor-pointer">
-                                        <div className="font-medium">不参加</div>
+                                        <div className="font-medium text-sm sm:text-base">不参加</div>
                                         <div className="text-xs text-muted-foreground">参加できません</div>
                                     </Label>
                                 </div>
@@ -399,12 +397,12 @@ export default function SharePage() {
                         </div>
 
                         {(selectedStatus === "遅れる" || selectedStatus === "不参加") && (
-                            <div className="space-y-2">
-                                <Label htmlFor="reason" className="text-base font-semibold">
+                            <div className="space-y-2 sm:space-y-3">
+                                <Label htmlFor="reason" className="text-sm sm:text-base font-semibold">
                                     理由を教えてください
                                 </Label>
                                 {selectedStatus === "遅れる" && REASON_PRESETS.遅れる.length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                         {REASON_PRESETS.遅れる.map((preset) => (
                                             <Button
                                                 key={preset}
@@ -412,7 +410,7 @@ export default function SharePage() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setReason(preset)}
-                                                className={reason === preset ? "border-primary bg-primary/10" : ""}
+                                                className={`text-xs sm:text-sm h-8 sm:h-9 ${reason === preset ? "border-primary bg-primary/10" : ""}`}
                                             >
                                                 {preset}
                                             </Button>
@@ -420,7 +418,7 @@ export default function SharePage() {
                                     </div>
                                 )}
                                 {selectedStatus === "不参加" && REASON_PRESETS.不参加.length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                         {REASON_PRESETS.不参加.map((preset) => (
                                             <Button
                                                 key={preset}
@@ -428,7 +426,7 @@ export default function SharePage() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setReason(preset)}
-                                                className={reason === preset ? "border-primary bg-primary/10" : ""}
+                                                className={`text-xs sm:text-sm h-8 sm:h-9 ${reason === preset ? "border-primary bg-primary/10" : ""}`}
                                             >
                                                 {preset}
                                             </Button>
@@ -441,16 +439,17 @@ export default function SharePage() {
                                     onChange={(e) => setReason(e.target.value)}
                                     placeholder="理由を入力してください"
                                     rows={3}
+                                    className="text-xs sm:text-sm"
                                 />
                             </div>
                         )}
                     </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                    <DialogFooter className="flex gap-2 sm:gap-0 pt-4 border-t flex-shrink-0">
+                        <Button variant="outline" onClick={() => setDialogOpen(false)} className="w-full sm:w-auto h-10 sm:h-9 text-sm" size="sm">
                             キャンセル
                         </Button>
-                        <Button onClick={handleSaveResponse} disabled={saving}>
+                        <Button onClick={handleSaveResponse} disabled={saving} className="w-full sm:w-auto h-10 sm:h-9 text-sm" size="sm">
                             {saving ? "保存中..." : "回答を保存"}
                         </Button>
                     </DialogFooter>

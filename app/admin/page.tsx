@@ -68,6 +68,7 @@ import { HistoryPanel } from "@/components/HistoryPanel";
 import { SharePanel } from "@/components/SharePanel";
 import { UnansweredPanel } from "@/components/UnansweredPanel";
 import { EventCalendar } from "@/components/EventCalendar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { members } from "@/lib/members";
 import {
   getAllEvents,
@@ -85,6 +86,7 @@ import {
 import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
+import { AnnouncementDialog, ShareLinkDialog } from "@/components/CommonDialogs";
 
 import { useRouter } from "next/navigation";
 import { LoadingScreen } from "@/components/Loading";
@@ -102,6 +104,18 @@ export default function AdminPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("events");
   const [selectedEventForShare, setSelectedEventForShare] = useState<Event | null>(null);
+
+  const handleTabChangeWithScroll = (tabId: string) => {
+    setActiveTab(tabId);
+
+    // 次のフレームでスクロール（状態更新後に実行）
+    setTimeout(() => {
+      const element = document.getElementById(`tab-content-${tabId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 0);
+  };
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -380,14 +394,6 @@ export default function AdminPage() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/")}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Home className="w-5 h-5" />
-            </Button>
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
                 <Users className="w-6 h-6 text-primary" />
@@ -401,394 +407,26 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => router.push("/")}
+              className="text-muted-foreground hover:text-foreground"
+              title="ホームに戻る"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Home className="w-5 h-5" />
             </Button>
-
-            <div className="hidden md:flex items-center gap-2">
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                <span className="hidden lg:inline">CSV</span>
-                <span className="lg:hidden">出力</span>
-              </Button>
-              <Dialog
-                open={isAnnouncementDialogOpen}
-                onOpenChange={(open) => {
-                  setIsAnnouncementDialogOpen(open);
-                  if (!open) {
-                    setEditingAnnouncement(null);
-                    setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                  }
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Bell className="w-4 h-4 mr-2" />
-                    お知らせ
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingAnnouncement ? "お知らせ編集" : "新規お知らせ作成"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      お知らせの詳細を入力してください
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="announcement-title">タイトル</Label>
-                      <Input
-                        id="announcement-title"
-                        value={newAnnouncement.title}
-                        onChange={(e) =>
-                          setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
-                        }
-                        placeholder="例: 文化祭準備のお知らせ"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="announcement-priority">優先度</Label>
-                      <Select
-                        value={newAnnouncement.priority}
-                        onValueChange={(value: AnnouncementPriority) =>
-                          setNewAnnouncement({ ...newAnnouncement, priority: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ANNOUNCEMENT_PRIORITIES.map((priority) => (
-                            <SelectItem key={priority} value={priority}>
-                              {priority}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="announcement-content">内容</Label>
-                      <Textarea
-                        id="announcement-content"
-                        value={newAnnouncement.content}
-                        onChange={(e) =>
-                          setNewAnnouncement({ ...newAnnouncement, content: e.target.value })
-                        }
-                        placeholder="お知らせの内容を入力してください"
-                        rows={5}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsAnnouncementDialogOpen(false);
-                        setEditingAnnouncement(null);
-                        setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                      }}
-                    >
-                      キャンセル
-                    </Button>
-                    <Button onClick={handleCreateAnnouncement}>
-                      {editingAnnouncement ? "更新" : "作成"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    新規作成
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>新規予定作成</DialogTitle>
-                    <DialogDescription>
-                      新しい予定の詳細を入力してください
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">予定名</Label>
-                      <Input
-                        id="title"
-                        value={newEvent.title}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, title: e.target.value })
-                        }
-                        placeholder="例: 第1回定例会"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="type">種類</Label>
-                      <Select
-                        value={newEvent.type}
-                        onValueChange={(value: EventType) =>
-                          setNewEvent({ ...newEvent, type: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EVENT_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="date">開催日</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={newEvent.date}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, date: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="time">開催時刻（任意）</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={newEvent.time}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, time: e.target.value })
-                        }
-                        placeholder="未指定の場合は終日扱い"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="deadlineDate">回答締切日</Label>
-                      <Input
-                        id="deadlineDate"
-                        type="date"
-                        value={newEvent.deadlineDate}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, deadlineDate: e.target.value })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        ※締切時刻は自動的に23:59になります
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      キャンセル
-                    </Button>
-                    <Button onClick={handleCreateEvent}>作成</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <ThemeToggle />
+            <AdminSidebar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onTabChangeWithScroll={handleTabChangeWithScroll}
+              onExportCSV={exportToCSV}
+              onCreateAnnouncement={() => setIsAnnouncementDialogOpen(true)}
+              onCreateEvent={() => setIsCreateDialogOpen(true)}
+            />
           </div>
         </div>
-
-        {/* モバイルメニュー */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-background p-4 space-y-2">
-            <Button onClick={exportToCSV} variant="outline" className="w-full justify-start" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              CSVエクスポート
-            </Button>
-            <Dialog
-              open={isAnnouncementDialogOpen}
-              onOpenChange={(open) => {
-                setIsAnnouncementDialogOpen(open);
-                if (!open) {
-                  setEditingAnnouncement(null);
-                  setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                }
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <Bell className="w-4 h-4 mr-2" />
-                  お知らせ作成
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingAnnouncement ? "お知らせ編集" : "新規お知らせ作成"}
-                  </DialogTitle>
-                  <DialogDescription>
-                    お知らせの詳細を入力してください
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="announcement-title-mobile">タイトル</Label>
-                    <Input
-                      id="announcement-title-mobile"
-                      value={newAnnouncement.title}
-                      onChange={(e) =>
-                        setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
-                      }
-                      placeholder="例: 文化祭準備のお知らせ"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="announcement-priority-mobile">優先度</Label>
-                    <Select
-                      value={newAnnouncement.priority}
-                      onValueChange={(value: AnnouncementPriority) =>
-                        setNewAnnouncement({ ...newAnnouncement, priority: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ANNOUNCEMENT_PRIORITIES.map((priority) => (
-                          <SelectItem key={priority} value={priority}>
-                            {priority}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="announcement-content-mobile">内容</Label>
-                    <Textarea
-                      id="announcement-content-mobile"
-                      value={newAnnouncement.content}
-                      onChange={(e) =>
-                        setNewAnnouncement({ ...newAnnouncement, content: e.target.value })
-                      }
-                      placeholder="お知らせの内容を入力してください"
-                      rows={5}
-                    />
-                  </div>
-                </div>
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsAnnouncementDialogOpen(false);
-                      setEditingAnnouncement(null);
-                      setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                    }}
-                    className="w-full sm:w-auto"
-                  >
-                    キャンセル
-                  </Button>
-                  <Button onClick={handleCreateAnnouncement} className="w-full sm:w-auto">
-                    {editingAnnouncement ? "更新" : "作成"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full justify-start" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  新規予定作成
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>新規予定作成</DialogTitle>
-                  <DialogDescription>
-                    新しい予定の詳細を入力してください
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title-mobile">予定名</Label>
-                    <Input
-                      id="title-mobile"
-                      value={newEvent.title}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, title: e.target.value })
-                      }
-                      placeholder="例: 第1回定例会"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type-mobile">種類</Label>
-                    <Select
-                      value={newEvent.type}
-                      onValueChange={(value: EventType) =>
-                        setNewEvent({ ...newEvent, type: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EVENT_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date-mobile">開催日</Label>
-                    <Input
-                      id="date-mobile"
-                      type="date"
-                      value={newEvent.date}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, date: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="time-mobile">開催時刻（任意）</Label>
-                    <Input
-                      id="time-mobile"
-                      type="time"
-                      value={newEvent.time}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, time: e.target.value })
-                      }
-                      placeholder="未指定の場合は終日扱い"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="deadlineDate-mobile">回答締切日</Label>
-                    <Input
-                      id="deadlineDate-mobile"
-                      type="date"
-                      value={newEvent.deadlineDate}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, deadlineDate: e.target.value })
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ※締切時刻は自動的に23:59になります
-                    </p>
-                  </div>
-                </div>
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="w-full sm:w-auto">
-                    キャンセル
-                  </Button>
-                  <Button onClick={handleCreateEvent} className="w-full sm:w-auto">作成</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
       </header>
 
       <div className="container mx-auto p-4 space-y-6 max-w-7xl">
@@ -830,7 +468,7 @@ export default function AdminPage() {
                         </h3>
                         {getPriorityBadge(announcement.priority)}
                       </div>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3 mb-2">
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-2">
                         {announcement.content}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -921,80 +559,201 @@ export default function AdminPage() {
         </div>
 
         {/* メインコンテンツ */}
-        <Tabs defaultValue="announcements" className="space-y-6">
-          <div className="flex items-center justify-center overflow-x-auto">
-            <TabsList className="inline-flex h-11 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
-              <TabsTrigger
-                value="announcements"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">お知らせ</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="calendar"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">カレンダー</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="events"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">予定一覧</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="matrix"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">マトリクス</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="statistics"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">統計</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="history"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <History className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">履歴</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="share"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">シェア</span>
-              </TabsTrigger>
-              <a
-                href="/tv-dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted"
-                style={{ textDecoration: "none" }}
-              >
-                <Monitor className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">テレビ画面</span>
-              </a>
-              <a
-                href="/admin/events"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted"
-                style={{ textDecoration: "none" }}
-              >
-                <ListTodo className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">一時予定追加</span>
-              </a>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="hidden md:flex items-center justify-between">
+            <div className="flex items-center justify-center overflow-x-auto flex-1">
+              <TabsList className="inline-flex h-11 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+                <TabsTrigger
+                  value="announcements"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">お知らせ</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="calendar"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">カレンダー</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="events"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">予定一覧</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="matrix"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">マトリクス</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="statistics"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">統計</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <History className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">履歴</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="tv-dashboard"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Monitor className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">TV画面</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="temp-events"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <ListTodo className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">今日のやることリスト</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="flex gap-2 ml-4">
+              {activeTab === "announcements" && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingAnnouncement(null);
+                    setNewAnnouncement({ title: "", content: "", priority: "通常" });
+                    setIsAnnouncementDialogOpen(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  お知らせ作成
+                </Button>
+              )}
+              {activeTab === "events" && (
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      予定を追加
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] sm:max-w-md p-4 sm:p-6">
+                    <DialogHeader className="space-y-2">
+                      <DialogTitle className="text-lg sm:text-xl">予定を作成</DialogTitle>
+                      <DialogDescription className="text-sm sm:text-base">
+                        新しい予定を追加してください
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="event-title" className="text-sm sm:text-base">タイトル</Label>
+                        <Input
+                          id="event-title"
+                          value={newEvent.title}
+                          onChange={(e) =>
+                            setNewEvent({ ...newEvent, title: e.target.value })
+                          }
+                          placeholder="例: 定例会"
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="event-type" className="text-sm sm:text-base">種類</Label>
+                        <Select
+                          value={newEvent.type}
+                          onValueChange={(value: EventType) =>
+                            setNewEvent({ ...newEvent, type: value })
+                          }
+                        >
+                          <SelectTrigger className="text-sm sm:text-base">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EVENT_TYPES.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="event-date" className="text-sm sm:text-base">開催日</Label>
+                        <Input
+                          id="event-date"
+                          type="date"
+                          value={newEvent.date}
+                          onChange={(e) =>
+                            setNewEvent({ ...newEvent, date: e.target.value })
+                          }
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="event-time" className="text-sm sm:text-base">開催時刻（オプション）</Label>
+                        <Input
+                          id="event-time"
+                          type="time"
+                          value={newEvent.time}
+                          onChange={(e) =>
+                            setNewEvent({ ...newEvent, time: e.target.value })
+                          }
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="event-deadline" className="text-sm sm:text-base">締切日</Label>
+                        <Input
+                          id="event-deadline"
+                          type="date"
+                          value={newEvent.deadlineDate}
+                          onChange={(e) =>
+                            setNewEvent({ ...newEvent, deadlineDate: e.target.value })
+                          }
+                          className="text-sm sm:text-base"
+                        />
+                      </div>
+                    </div>
+
+                    <DialogFooter className="flex gap-2 justify-end pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsCreateDialogOpen(false);
+                          setNewEvent({
+                            title: "",
+                            type: "定例会",
+                            date: "",
+                            time: "",
+                            deadlineDate: "",
+                          });
+                        }}
+                        size="sm"
+                      >
+                        キャンセル
+                      </Button>
+                      <Button onClick={handleCreateEvent} size="sm">
+                        作成
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
 
-          <TabsContent value="announcements" className="space-y-4">
+          <TabsContent value="announcements" id="tab-content-announcements" className="space-y-4">
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1004,93 +763,6 @@ export default function AdminPage() {
                       メンバーに表示されるお知らせを管理
                     </CardDescription>
                   </div>
-                  <Dialog
-                    open={isAnnouncementDialogOpen}
-                    onOpenChange={(open) => {
-                      setIsAnnouncementDialogOpen(open);
-                      if (!open) {
-                        setEditingAnnouncement(null);
-                        setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                      }
-                    }}
-                  >
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        新規作成
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingAnnouncement ? "お知らせ編集" : "新規お知らせ作成"}
-                        </DialogTitle>
-                        <DialogDescription>
-                          お知らせの詳細を入力してください
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="announcement-title-tab">タイトル</Label>
-                          <Input
-                            id="announcement-title-tab"
-                            value={newAnnouncement.title}
-                            onChange={(e) =>
-                              setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
-                            }
-                            placeholder="例: 文化祭準備のお知らせ"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="announcement-priority-tab">優先度</Label>
-                          <Select
-                            value={newAnnouncement.priority}
-                            onValueChange={(value: AnnouncementPriority) =>
-                              setNewAnnouncement({ ...newAnnouncement, priority: value })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ANNOUNCEMENT_PRIORITIES.map((priority) => (
-                                <SelectItem key={priority} value={priority}>
-                                  {priority}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="announcement-content-tab">内容</Label>
-                          <Textarea
-                            id="announcement-content-tab"
-                            value={newAnnouncement.content}
-                            onChange={(e) =>
-                              setNewAnnouncement({ ...newAnnouncement, content: e.target.value })
-                            }
-                            placeholder="お知らせの内容を入力してください"
-                            rows={5}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setIsAnnouncementDialogOpen(false);
-                            setEditingAnnouncement(null);
-                            setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                          }}
-                        >
-                          キャンセル
-                        </Button>
-                        <Button onClick={handleCreateAnnouncement}>
-                          {editingAnnouncement ? "更新" : "作成"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1098,23 +770,16 @@ export default function AdminPage() {
                   <div className="py-12 text-center">
                     <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground mb-4">お知らせがありません</p>
-                    <Dialog
-                      open={isAnnouncementDialogOpen}
-                      onOpenChange={(open) => {
-                        setIsAnnouncementDialogOpen(open);
-                        if (!open) {
-                          setEditingAnnouncement(null);
-                          setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                        }
+                    <Button
+                      onClick={() => {
+                        setEditingAnnouncement(null);
+                        setNewAnnouncement({ title: "", content: "", priority: "通常" });
+                        setIsAnnouncementDialogOpen(true);
                       }}
                     >
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="w-4 h-4 mr-2" />
-                          最初のお知らせを作成
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
+                      <Plus className="w-4 h-4 mr-2" />
+                      最初のお知らせを作成
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1174,7 +839,7 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="calendar" className="space-y-4">
+          <TabsContent value="calendar" id="tab-content-calendar" className="space-y-4">
             <EventCalendar
               events={events}
               highlightDates={events
@@ -1185,7 +850,7 @@ export default function AdminPage() {
             />
           </TabsContent>
 
-          <TabsContent value="events" className="space-y-4">
+          <TabsContent value="events" id="tab-content-events" className="space-y-4">
             <Card className="border-0 shadow-md">
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1371,7 +1036,7 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="matrix" className="space-y-4">
+          <TabsContent value="matrix" id="tab-content-matrix" className="space-y-4">
             <Card className="border-0 shadow-md">
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1503,40 +1168,128 @@ export default function AdminPage() {
           </TabsContent>
 
           {/* 統計タブ */}
-          <TabsContent value="statistics" className="space-y-4">
+          <TabsContent value="statistics" id="tab-content-statistics" className="space-y-4">
             <StatisticsPanel events={events} responses={responses} />
           </TabsContent>
 
           {/* 履歴タブ */}
-          <TabsContent value="history" className="space-y-4">
+          <TabsContent value="history" id="tab-content-history" className="space-y-4">
             <HistoryPanel events={events} responses={responses} members={members} />
           </TabsContent>
+
+          <TabsContent value="tv-dashboard" id="tab-content-tv-dashboard" className="space-y-4">
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">TV画面に移動します</p>
+              <Button
+                onClick={() => window.location.href = '/tv-dashboard'}
+                className="mt-4"
+              >
+                TV画面を開く
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="temp-events" id="tab-content-temp-events" className="space-y-4">
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">今日のやることリストに移動します</p>
+              <Button
+                onClick={() => window.location.href = '/admin/events'}
+                className="mt-4"
+              >
+                今日のやることリストを開く
+              </Button>
+            </div>
+          </TabsContent>
         </Tabs>
+
+        {/* アナウンスメント作成・編集ダイアログ */}
+        <AnnouncementDialog
+          isOpen={isAnnouncementDialogOpen}
+          onOpenChange={(open) => {
+            setIsAnnouncementDialogOpen(open);
+            if (!open) {
+              setEditingAnnouncement(null);
+              setNewAnnouncement({ title: "", content: "", priority: "通常" });
+            }
+          }}
+          isEditing={!!editingAnnouncement}
+          onSubmit={handleCreateAnnouncement}
+          onCancel={() => {
+            setEditingAnnouncement(null);
+            setNewAnnouncement({ title: "", content: "", priority: "通常" });
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="announcement-title">タイトル</Label>
+            <Input
+              id="announcement-title"
+              value={newAnnouncement.title}
+              onChange={(e) =>
+                setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
+              }
+              placeholder="例: 文化祭準備のお知らせ"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="announcement-priority">優先度</Label>
+            <Select
+              value={newAnnouncement.priority}
+              onValueChange={(value: AnnouncementPriority) =>
+                setNewAnnouncement({ ...newAnnouncement, priority: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ANNOUNCEMENT_PRIORITIES.map((priority) => (
+                  <SelectItem key={priority} value={priority}>
+                    {priority}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="announcement-content">内容</Label>
+            <Textarea
+              id="announcement-content"
+              value={newAnnouncement.content}
+              onChange={(e) =>
+                setNewAnnouncement({ ...newAnnouncement, content: e.target.value })
+              }
+              placeholder="お知らせの内容を入力してください"
+              rows={5}
+            />
+          </div>
+        </AnnouncementDialog>
 
         {/* 共有ダイアログ */}
         <Dialog open={!!selectedEventForShare} onOpenChange={(open) => {
           if (!open) setSelectedEventForShare(null);
         }}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Share2 className="w-5 h-5" />
-                {selectedEventForShare?.title || ""}の共有
+          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] p-4 sm:p-6 flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle className="text-lg sm:text-xl flex items-center gap-2">
+                <Share2 className="w-5 h-5 flex-shrink-0" />
+                <span className="line-clamp-1">{selectedEventForShare?.title || ""}の共有</span>
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm sm:text-base">
                 このイベントへの回答フォームを共有できます
               </DialogDescription>
             </DialogHeader>
             {selectedEventForShare && (
-              <SharePanel
-                event={selectedEventForShare}
-                onShareCreated={() => {
-                  // 必要に応じて更新処理
-                }}
-                onShareDeleted={() => {
-                  // 必要に応じて更新処理
-                }}
-              />
+              <div className="flex-1 overflow-y-auto">
+                <SharePanel
+                  event={selectedEventForShare}
+                  onShareCreated={() => {
+                    // 必要に応じて更新処理
+                  }}
+                  onShareDeleted={() => {
+                    // 必要に応じて更新処理
+                  }}
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SwRegister } from "./sw-register";
+import { CacheClearer } from "./cache-clearer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -113,6 +114,7 @@ export default function RootLayout({
         >
           {children}
           <SwRegister />
+          <CacheClearer />
         </ThemeProvider>
 
         {/* 遅延読み込みスクリプト */}

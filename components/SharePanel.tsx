@@ -64,6 +64,27 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
     const [copiedToken, setCopiedToken] = useState<string | null>(null);
     const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
+    // フォールバック関数：古いやり方でクリップボードにコピー
+    const copyToClipboardFallback = (text: string) => {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+
+        try {
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand("copy");
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (error) {
+            document.body.removeChild(textArea);
+            return false;
+        }
+    };
+
     useEffect(() => {
         loadShares();
     }, [event.id]);
@@ -96,12 +117,24 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
             onShareCreated?.();
 
             // 自動でURLをコピー
-            navigator.clipboard.writeText(shareUrl);
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(shareUrl);
+                } else {
+                    if (!copyToClipboardFallback(shareUrl)) {
+                        throw new Error("クリップボードコピーに失敗しました");
+                    }
+                }
+            } catch (clipboardError) {
+                console.error("URLコピーエラー:", clipboardError);
+                // コピー失敗時はアラートには出さない（リンク作成は成功している）
+            }
+
             setSelectedShareToken(token);
             setCopiedToken(token);
             setTimeout(() => setCopiedToken(null), 2000);
 
-            alert("共有リンクを作成しました。URLをコピーしました。");
+            alert("共有リンクを作成しました。");
         } catch (error) {
             console.error("共有リンク作成エラー:", error);
             alert("共有リンクの作成に失敗しました");
@@ -113,7 +146,13 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
     const handleCopyShareLink = async (token: string) => {
         try {
             const shareUrl = `${window.location.origin}/share/${token}`;
-            await navigator.clipboard.writeText(shareUrl);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(shareUrl);
+            } else {
+                if (!copyToClipboardFallback(shareUrl)) {
+                    throw new Error("クリップボードコピーに失敗しました");
+                }
+            }
             setCopiedToken(token);
             setTimeout(() => setCopiedToken(null), 2000);
         } catch (error) {
@@ -126,7 +165,13 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
         try {
             const shareUrl = `${window.location.origin}/share/${token}`;
             const message = generateShareMessage(event, shareUrl);
-            await navigator.clipboard.writeText(message);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(message);
+            } else {
+                if (!copyToClipboardFallback(message)) {
+                    throw new Error("クリップボードコピーに失敗しました");
+                }
+            }
             setCopiedMessage(token);
             setTimeout(() => setCopiedMessage(null), 2000);
         } catch (error) {

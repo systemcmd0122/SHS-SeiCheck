@@ -71,6 +71,8 @@ export default function MemberDashboard() {
   const [selectedStatus, setSelectedStatus] = useState<ResponseStatus>("参加");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -300,42 +302,46 @@ export default function MemberDashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto p-4 space-y-6 max-w-4xl">
+      <div className="container mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 max-w-4xl">
         {/* お知らせセクション */}
         {announcements.length > 0 && (
           <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
                 お知らせ
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 最新のお知らせを確認してください
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3">
               {announcements.slice(0, 3).map((announcement) => (
                 <div
                   key={announcement.id}
-                  className={`p-4 rounded-lg border transition-all ${announcement.priority === "緊急"
+                  onClick={() => {
+                    setSelectedAnnouncement(announcement);
+                    setAnnouncementDialogOpen(true);
+                  }}
+                  className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer active:shadow-lg ${announcement.priority === "緊急"
                     ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
                     : announcement.priority === "重要"
                       ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
                       : "bg-card hover:shadow-md"
                     }`}
                 >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
                       {announcement.priority !== "通常" && (
-                        <Megaphone className="w-4 h-4 text-primary shrink-0" />
+                        <Megaphone className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       )}
-                      <h3 className="font-semibold text-base truncate">
+                      <h3 className="font-semibold text-sm sm:text-base truncate">
                         {announcement.title}
                       </h3>
                     </div>
-                    {getPriorityBadge(announcement.priority)}
+                    <div className="shrink-0">{getPriorityBadge(announcement.priority)}</div>
                   </div>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap">
                     {announcement.content}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
@@ -348,55 +354,55 @@ export default function MemberDashboard() {
         )}
 
         {/* 統計カード */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">参加</CardTitle>
-              <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium">参加</CardTitle>
+              <div className="p-1.5 sm:p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.participated}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{stats.participated}</div>
               <p className="text-xs text-muted-foreground mt-1">回答済み</p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">遅れる</CardTitle>
-              <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
-                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium">遅れる</CardTitle>
+              <div className="p-1.5 sm:p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600 dark:text-amber-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.late}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{stats.late}</div>
               <p className="text-xs text-muted-foreground mt-1">遅刻予定</p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">不参加</CardTitle>
-              <div className="p-2 bg-rose-100 dark:bg-rose-900 rounded-lg">
-                <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium">不参加</CardTitle>
+              <div className="p-1.5 sm:p-2 bg-rose-100 dark:bg-rose-900 rounded-lg">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-rose-600 dark:text-rose-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.absent}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{stats.absent}</div>
               <p className="text-xs text-muted-foreground mt-1">欠席</p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">未回答</CardTitle>
-              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium">未回答</CardTitle>
+              <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.unanswered}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{stats.unanswered}</div>
               {stats.overdueUnanswered > 0 && (
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
                   期限切れ {stats.overdueUnanswered}件
@@ -421,27 +427,27 @@ export default function MemberDashboard() {
         {/* 直近の予定 */}
         {upcomingEvents.length > 0 && (
           <Card className="border-0 shadow-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
+            <CardHeader className="pb-3 sm:pb-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                     直近の予定
                   </CardTitle>
-                  <CardDescription className="mt-1">
+                  <CardDescription className="mt-1 text-xs sm:text-sm">
                     回答が必要な予定を確認してください
                   </CardDescription>
                 </div>
               </div>
               {stats.unanswered > 0 && (
-                <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-amber-900 dark:text-amber-100">
+                      <p className="font-medium text-amber-900 dark:text-amber-100 text-sm sm:text-base">
                         {stats.unanswered}件の回答が必要です
                       </p>
-                      <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                      <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-200 mt-1">
                         下記の予定をタップして、出欠を回答してください。
                       </p>
                     </div>
@@ -449,7 +455,7 @@ export default function MemberDashboard() {
                 </div>
               )}
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3">
               {upcomingEvents.map((event) => {
                 const response = getMyResponse(event.id);
                 const status: ResponseStatus = response?.status || "未回答";
@@ -459,25 +465,25 @@ export default function MemberDashboard() {
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border transition-all ${isUrgent
+                    className={`p-3 sm:p-4 rounded-lg border transition-all ${isUrgent
                       ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
                       : "bg-card hover:shadow-md"
-                      } ${!deadlinePassed ? "cursor-pointer" : "opacity-60"}`}
+                      } ${!deadlinePassed ? "cursor-pointer active:shadow-lg" : "opacity-60"}`}
                     onClick={() => handleEventClick(event)}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base truncate">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap gap-y-1">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">
                             {event.title}
                           </h3>
                           <Badge variant="outline" className="shrink-0 text-xs">
                             {event.type}
                           </Badge>
                         </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
                               {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
                                 locale: ja,
@@ -485,22 +491,22 @@ export default function MemberDashboard() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
                               締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
                             </span>
                           </div>
                         </div>
                         {response?.reason && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
                             理由: {response.reason}
                           </p>
                         )}
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1.5 sm:gap-2 shrink-0">
                         {getStatusBadge(status, deadlinePassed && status === "未回答")}
                         {!deadlinePassed && (
-                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                         )}
                       </div>
                     </div>
@@ -513,20 +519,20 @@ export default function MemberDashboard() {
 
         {/* 全予定一覧 */}
         <Card className="border-0 shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               予定一覧
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               予定をタップして出欠を回答してください
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 sm:space-y-3">
             {events.length === 0 ? (
-              <div className="py-12 text-center">
-                <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">予定がありません</p>
+              <div className="py-8 sm:py-12 text-center">
+                <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-xs sm:text-sm text-muted-foreground">予定がありません</p>
               </div>
             ) : (
               events.map((event) => {
@@ -538,16 +544,16 @@ export default function MemberDashboard() {
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border transition-all ${isOverdue
+                    className={`p-3 sm:p-4 rounded-lg border transition-all ${isOverdue
                       ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/50"
                       : "bg-card hover:shadow-md"
-                      } ${!deadlinePassed ? "cursor-pointer" : "opacity-60"}`}
+                      } ${!deadlinePassed ? "cursor-pointer active:shadow-lg" : "opacity-60"}`}
                     onClick={() => handleEventClick(event)}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-base truncate">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap gap-y-1">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">
                             {event.title}
                           </h3>
                           <Badge variant="outline" className="shrink-0 text-xs">
@@ -559,9 +565,9 @@ export default function MemberDashboard() {
                             </Badge>
                           )}
                         </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
                               {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
                                 locale: ja,
@@ -569,7 +575,7 @@ export default function MemberDashboard() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
                               締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
                               {deadlinePassed && " (終了)"}
@@ -577,15 +583,15 @@ export default function MemberDashboard() {
                           </div>
                         </div>
                         {response?.reason && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
                             理由: {response.reason}
                           </p>
                         )}
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1.5 sm:gap-2 shrink-0">
                         {getStatusBadge(status, isOverdue)}
                         {!deadlinePassed && (
-                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                         )}
                       </div>
                     </div>
@@ -599,10 +605,12 @@ export default function MemberDashboard() {
 
       {/* 回答ダイアログ */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selectedEvent?.title}</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[95vw] sm:max-w-lg p-4 sm:p-6 max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl line-clamp-2">
+              {selectedEvent?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
               {selectedEvent &&
                 format(new Date(selectedEvent.dateTime), "M月d日(E) HH:mm", {
                   locale: ja,
@@ -610,36 +618,36 @@ export default function MemberDashboard() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label>出欠状況</Label>
+          <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 py-4">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="text-sm sm:text-base">出欠状況</Label>
               <RadioGroup value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as ResponseStatus)}>
-                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent cursor-pointer active:shadow-md transition-all">
                   <RadioGroupItem value="参加" id="participate" />
                   <Label htmlFor="participate" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      <span className="font-medium">参加</span>
+                      <span className="font-medium text-sm sm:text-base">参加</span>
                     </div>
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent cursor-pointer active:shadow-md transition-all">
                   <RadioGroupItem value="遅れる" id="late" />
                   <Label htmlFor="late" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
-                      <span className="font-medium">遅れる</span>
+                      <span className="font-medium text-sm sm:text-base">遅れる</span>
                     </div>
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                <div className="flex items-center space-x-2 p-2.5 sm:p-3 rounded-lg border hover:bg-accent cursor-pointer active:shadow-md transition-all">
                   <RadioGroupItem value="不参加" id="absent" />
                   <Label htmlFor="absent" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-rose-500" />
-                      <span className="font-medium">不参加</span>
+                      <span className="font-medium text-sm sm:text-base">不参加</span>
                     </div>
                   </Label>
                 </div>
@@ -647,13 +655,13 @@ export default function MemberDashboard() {
             </div>
 
             {(selectedStatus === "遅れる" || selectedStatus === "不参加") && (
-              <div className="space-y-3">
-                <Label htmlFor="reason">
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="reason" className="text-sm sm:text-base">
                   理由 <span className="text-red-500">*</span>
                 </Label>
 
                 {/* プリセットボタン */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {REASON_PRESETS[selectedStatus].map((preset) => (
                     <Button
                       key={preset}
@@ -661,7 +669,7 @@ export default function MemberDashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setReason(preset)}
-                      className={reason === preset ? "bg-primary text-primary-foreground" : ""}
+                      className={`text-xs sm:text-sm h-8 sm:h-9 ${reason === preset ? "bg-primary text-primary-foreground" : ""}`}
                     >
                       {preset}
                     </Button>
@@ -674,26 +682,68 @@ export default function MemberDashboard() {
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="理由を入力してください"
                   rows={3}
+                  className="text-xs sm:text-sm"
                 />
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex gap-2 sm:gap-0 pt-4 border-t flex-shrink-0">
             <Button
               variant="outline"
               onClick={() => setDialogOpen(false)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-10 sm:h-9 text-sm"
+              size="sm"
               disabled={saving}
             >
               キャンセル
             </Button>
             <Button
               onClick={handleSaveResponse}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-10 sm:h-9 text-sm"
+              size="sm"
               disabled={saving}
             >
               {saving ? "保存中..." : "回答を保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* お知らせ詳細ダイアログ */}
+      <Dialog open={announcementDialogOpen} onOpenChange={setAnnouncementDialogOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] p-4 sm:p-6 flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl line-clamp-2">
+              {selectedAnnouncement?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              {selectedAnnouncement && (
+                format(new Date(selectedAnnouncement.createdAt), "M月d日 HH:mm", { locale: ja })
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAnnouncement && (
+            <div className="flex-1 overflow-y-auto space-y-4 py-4">
+              <div className="flex items-center gap-2">
+                {getPriorityBadge(selectedAnnouncement.priority)}
+              </div>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-wrap">
+                  {selectedAnnouncement.content}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="pt-4 border-t flex-shrink-0">
+            <Button
+              onClick={() => setAnnouncementDialogOpen(false)}
+              className="w-full sm:w-auto h-10 sm:h-9 text-sm"
+              size="sm"
+            >
+              閉じる
             </Button>
           </DialogFooter>
         </DialogContent>

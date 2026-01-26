@@ -101,7 +101,7 @@ export default function TVDashboard() {
                 if (eventsRes.ok) {
                     const data = await eventsRes.json();
                     if (data.success && Array.isArray(data.data)) {
-                        mainEvents = data.data;
+                        mainEvents = data.data.filter((e: any) => e && e.title);
                     }
                 }
 
@@ -110,13 +110,15 @@ export default function TVDashboard() {
                 if (googleEventsRes.ok) {
                     const data = await googleEventsRes.json();
                     if (data.success && Array.isArray(data.data)) {
-                        const googleEvents: TodayEvent[] = data.data.map((e: any) => ({
-                            id: e.id,
-                            title: e.title,
-                            dateTime: e.startTime,
-                            type: "google-calendar",
-                            deadline: e.endTime,
-                        }));
+                        const googleEvents: TodayEvent[] = data.data
+                            .filter((e: any) => e && e.title)
+                            .map((e: any) => ({
+                                id: e.id,
+                                title: e.title,
+                                dateTime: e.startTime,
+                                type: "google-calendar",
+                                deadline: e.endTime,
+                            }));
                         mainEvents = [...mainEvents, ...googleEvents];
                     }
                 }
@@ -127,7 +129,7 @@ export default function TVDashboard() {
                 if (announcementsRes.ok) {
                     const data = await announcementsRes.json();
                     if (data.success && Array.isArray(data.data)) {
-                        setAnnouncements(data.data);
+                        setAnnouncements(data.data.filter((a: any) => a && a.title));
                     }
                 }
 
@@ -143,7 +145,7 @@ export default function TVDashboard() {
                 if (newsRes.ok) {
                     const data = await newsRes.json();
                     if (data.success && Array.isArray(data.data)) {
-                        setNews(data.data);
+                        setNews(data.data.filter((n: any) => n && n.title));
                     }
                 }
             } catch (error) {
@@ -164,7 +166,7 @@ export default function TVDashboard() {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && Array.isArray(data.data)) {
-                        setAbsentList(data.data);
+                        setAbsentList(data.data.filter((a: any) => a && a.eventTitle && a.memberName));
                     }
                 }
             } catch (e) {

@@ -1,0 +1,54 @@
+{
+    "name": "生徒会出欠管理システム",
+    "short_name": "出欠管理",
+    "description": "生徒会メンバーの出欠を管理するアプリケーション",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#000000",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "categories": [
+        "productivity"
+    ],
+    "screenshots": [
+        {
+            "src": "/icon.png",
+            "sizes": "540x720",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "720x720",
+            "type": "image/png",
+            "form_factor": "square"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ]
+}

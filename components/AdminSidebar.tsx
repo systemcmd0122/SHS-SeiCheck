@@ -10,7 +10,6 @@ import {
     Users,
     TrendingUp,
     History,
-    ListTodo,
     Download,
     Plus,
 } from "lucide-react";
@@ -92,13 +91,6 @@ export function AdminSidebar({
             label: "予定作成",
             icon: <Plus className="w-4 h-4" />,
             action: onCreateEvent,
-        },
-        { divider: true },
-        {
-            id: "temp-events",
-            label: "今日することリスト",
-            icon: <ListTodo className="w-4 h-4" />,
-            href: "/admin/events",
         },
         { divider: true },
         {

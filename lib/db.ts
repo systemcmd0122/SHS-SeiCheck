@@ -13,27 +13,12 @@ import {
 } from "firebase/firestore";
 import type { Event, Response, Announcement, ResponseLog, SharedResponse } from "./types";
 
-// TV画面設定の型定義
-export interface TVDashboardSettings {
-  id: string;
-  showNextEvent: boolean;
-  showTodayEvents: boolean;
-  showUpcomingEvents: boolean;
-  showAnnouncements: boolean;
-  showStatistics: boolean;
-  showNews: boolean;
-  showAbsentList: boolean;
-  updatedAt: string;
-}
-
 // コレクション参照
 const eventsCollection = collection(db, "events");
 const responsesCollection = collection(db, "responses");
 const announcementsCollection = collection(db, "announcements");
 const responseLogsCollection = collection(db, "responseLogs");
 const sharedResponsesCollection = collection(db, "sharedResponses");
-const todayTasksCollection = collection(db, "todayTasks");
-const tvSettingsCollection = collection(db, "tvSettings");
 
 // イベント関連の関数
 
@@ -480,191 +465,9 @@ export function subscribeToAnnouncement(announcementId: string, callback: (annou
   });
 }
 
-// 今日することタスク関連の関数
 
-/**
- * 今日のタスクを追加
- */
-export async function addTodayTask(title: string): Promise<string> {
-  const taskRef = doc(todayTasksCollection);
-  const taskId = taskRef.id;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  const taskData = {
-    id: taskId,
-    title,
-    createdAt: new Date().toISOString(),
-    date: today.toISOString().split("T")[0], // YYYY-MM-DD形式
-  };
 
-  await setDoc(taskRef, taskData);
-  return taskId;
-}
 
-/**
- * 今日のタスクをすべて取得
- */
-export async function getTodayTasks(): Promise<any[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
 
-  const q = query(todayTasksCollection, where("date", "==", todayStr));
-  const querySnapshot = await getDocs(q);
 
-  const tasks: any[] = [];
-  querySnapshot.forEach((doc) => {
-    tasks.push(doc.data());
-  });
-
-  return tasks;
-}
-
-/**
- * 今日のタスクを削除
- */
-export async function deleteTodayTask(taskId: string): Promise<void> {
-  const taskRef = doc(todayTasksCollection, taskId);
-  await deleteDoc(taskRef);
-}
-
-/**
- * 期限切れタスクを削除
- */
-export async function deleteExpiredTasks(): Promise<void> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
-
-  const q = query(todayTasksCollection, where("date", "<", todayStr));
-  const querySnapshot = await getDocs(q);
-
-  for (const docSnapshot of querySnapshot.docs) {
-    await deleteDoc(docSnapshot.ref);
-  }
-}
-
-/**
- * 今日のタスクをリアルタイムで監視
- */
-export function listenTodayTasks(callback: (tasks: any[]) => void): Unsubscribe {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
-
-  const q = query(todayTasksCollection, where("date", "==", todayStr));
-
-  return onSnapshot(q, (querySnapshot) => {
-    const tasks: any[] = [];
-    querySnapshot.forEach((doc) => {
-      tasks.push(doc.data());
-    });
-    // 作成日時でソート
-    tasks.sort((a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-    callback(tasks);
-  });
-}
-
-// TV設定関連の関数
-
-/**
- * デフォルトのTV設定を取得
- */
-function getDefaultTVSettings(): TVDashboardSettings {
-  return {
-    id: "default",
-    showNextEvent: true,
-    showTodayEvents: true,
-    showUpcomingEvents: true,
-    showAnnouncements: true,
-    showStatistics: true,
-    showNews: true,
-    showAbsentList: true,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-/**
- * TV設定を取得
- */
-export async function getTVSettings(): Promise<TVDashboardSettings> {
-  try {
-    const settingsRef = doc(tvSettingsCollection, "default");
-    const docSnap = await getDoc(settingsRef);
-
-    if (!docSnap.exists()) {
-      // 初回はデフォルト設定を返す
-      return getDefaultTVSettings();
-    }
-
-    return docSnap.data() as TVDashboardSettings;
-  } catch (error) {
-    console.error("Error fetching TV settings:", error);
-    return getDefaultTVSettings();
-  }
-}
-
-/**
- * TV設定を更新
- */
-export async function updateTVSettings(
-  settings: Partial<Omit<TVDashboardSettings, "id" | "updatedAt">>
-): Promise<void> {
-  try {
-    const settingsRef = doc(tvSettingsCollection, "default");
-    const updateData = {
-      id: "default",
-      ...settings,
-      updatedAt: new Date().toISOString(),
-    };
-    console.log("Updating TV settings:", updateData);
-    await setDoc(settingsRef, updateData, { merge: true });
-    console.log("TV settings updated successfully");
-  } catch (error) {
-    console.error("Error updating TV settings:", error);
-    throw new Error(
-      error instanceof Error
-        ? `TV設定の更新に失敗しました: ${error.message}`
-        : "TV設定の更新に失敗しました"
-    );
-  }
-}
-
-/**
- * TV設定をリアルタイムで監視
- */
-export function listenTVSettings(
-  callback: (settings: TVDashboardSettings) => void
-): Unsubscribe {
-  const settingsRef = doc(tvSettingsCollection, "default");
-
-  return onSnapshot(
-    settingsRef,
-    (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as TVDashboardSettings;
-        console.log("TV Settings from Firestore:", data);
-        callback(data);
-      } else {
-        // ドキュメントが存在しない場合はデフォルト設定を作成
-        console.log("TV Settings document not found, creating default...");
-        const defaultSettings = getDefaultTVSettings();
-        setDoc(settingsRef, defaultSettings)
-          .then(() => {
-            console.log("Default TV settings created");
-            callback(defaultSettings);
-          })
-          .catch((error) => {
-            console.error("Error creating default TV settings:", error);
-            callback(defaultSettings);
-          });
-      }
-    },
-    (error) => {
-      console.error("Error listening to TV settings:", error);
-    }
-  );
-}

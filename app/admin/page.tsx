@@ -22,8 +22,6 @@ import {
   TrendingUp,
   History,
   Share2,
-  Monitor,
-  ListTodo,
 } from "lucide-react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
@@ -644,20 +642,6 @@ export default function AdminPage() {
                   <History className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">履歴</span>
                 </TabsTrigger>
-                <TabsTrigger
-                  value="tv-dashboard"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Monitor className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">TV画面</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="temp-events"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <ListTodo className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">今日のやることリスト</span>
-                </TabsTrigger>
               </TabsList>
             </div>
             <div className="flex gap-2 ml-4">
@@ -981,153 +965,153 @@ export default function AdminPage() {
                     return (
                       <>
                         {paginatedEvents.map((event) => {
-                  const unanswered = getUnansweredMembers(event.id);
-                  const overdue = isOverdue(event);
-                  const hasWarning = overdue && unanswered.length > 0;
-                  const summary = getAttendanceSummary(event.id);
+                          const unanswered = getUnansweredMembers(event.id);
+                          const overdue = isOverdue(event);
+                          const hasWarning = overdue && unanswered.length > 0;
+                          const summary = getAttendanceSummary(event.id);
 
-                  return (
-                    <Card
-                      key={event.id}
-                      className={`border-0 shadow-md transition-all ${hasWarning ? "ring-2 ring-red-500" : ""
-                        }`}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-2 flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <CardTitle className="text-lg sm:text-xl truncate">
-                                {event.title}
-                              </CardTitle>
-                              <Badge variant="outline" className="shrink-0">
-                                {event.type}
-                              </Badge>
-                              {hasWarning && (
-                                <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 shrink-0">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  <span className="hidden sm:inline">締切超過</span>
-                                  <span className="sm:hidden">警告</span>
-                                </Badge>
-                              )}
-                            </div>
-                            <CardDescription className="text-xs sm:text-sm">
-                              <div className="flex flex-col gap-1">
-                                <span>
-                                  開催: {format(new Date(event.dateTime), "M/d HH:mm", { locale: ja })}
-                                </span>
-                                <span>
-                                  締切: {format(new Date(event.deadline), "M/d HH:mm", { locale: ja })}
-                                </span>
-                              </div>
-                            </CardDescription>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedEventForShare(event)}
-                              className="gap-2"
+                          return (
+                            <Card
+                              key={event.id}
+                              className={`border-0 shadow-md transition-all ${hasWarning ? "ring-2 ring-red-500" : ""
+                                }`}
                             >
-                              <Share2 className="h-4 w-4" />
-                              <span className="hidden sm:inline">共有</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                              onClick={() => handleDeleteEvent(event.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950">
-                            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                              {summary.attended}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">参加</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-rose-50 dark:bg-rose-950">
-                            <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                              {summary.absent}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">不参加</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950">
-                            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                              {summary.undecided}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">遅れる</div>
-                          </div>
-                          <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
-                            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                              {summary.unanswered}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">未回答</div>
-                          </div>
-                        </div>
-
-                        {unanswered.length > 0 && (
-                          <div className="p-3 rounded-lg bg-muted/50">
-                            <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                              <AlertTriangle className="w-4 h-4 text-amber-500" />
-                              未回答者 ({unanswered.length}名)
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {unanswered.map((member) => (
-                                <Badge key={member.id} variant="secondary" className="text-xs">
-                                  {member.name}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 未回答者促促パネル */}
-                        <UnansweredPanel event={event} responses={responses.filter((r) => r.eventId === event.id)} />
-
-                        <div>
-                          <h4 className="text-sm font-semibold mb-3">回答詳細</h4>
-                          <div className="space-y-2">
-                            {members.map((member) => {
-                              const response = responses.find(
-                                (r) => r.eventId === event.id && r.memberId === member.id
-                              );
-                              const status: ResponseStatus = response?.status || "未回答";
-                              return (
-                                <div
-                                  key={member.id}
-                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-muted/30"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-sm truncate">
-                                      {member.name}
-                                      <span className="text-xs text-muted-foreground ml-2">
-                                        ({member.committee})
-                                      </span>
+                              <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="space-y-2 flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <CardTitle className="text-lg sm:text-xl truncate">
+                                        {event.title}
+                                      </CardTitle>
+                                      <Badge variant="outline" className="shrink-0">
+                                        {event.type}
+                                      </Badge>
+                                      {hasWarning && (
+                                        <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 shrink-0">
+                                          <AlertTriangle className="w-3 h-3 mr-1" />
+                                          <span className="hidden sm:inline">締切超過</span>
+                                          <span className="sm:hidden">警告</span>
+                                        </Badge>
+                                      )}
                                     </div>
-                                    {response?.reason && (
-                                      <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                        理由: {response.reason}
+                                    <CardDescription className="text-xs sm:text-sm">
+                                      <div className="flex flex-col gap-1">
+                                        <span>
+                                          開催: {format(new Date(event.dateTime), "M/d HH:mm", { locale: ja })}
+                                        </span>
+                                        <span>
+                                          締切: {format(new Date(event.deadline), "M/d HH:mm", { locale: ja })}
+                                        </span>
                                       </div>
-                                    )}
+                                    </CardDescription>
                                   </div>
-                                  <div className="shrink-0">
-                                    {getStatusBadge(status)}
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setSelectedEventForShare(event)}
+                                      className="gap-2"
+                                    >
+                                      <Share2 className="h-4 w-4" />
+                                      <span className="hidden sm:inline">共有</span>
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                      onClick={() => handleDeleteEvent(event.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                              </CardHeader>
+
+                              <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                  <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950">
+                                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                      {summary.attended}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">参加</div>
+                                  </div>
+                                  <div className="text-center p-3 rounded-lg bg-rose-50 dark:bg-rose-950">
+                                    <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+                                      {summary.absent}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">不参加</div>
+                                  </div>
+                                  <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950">
+                                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                                      {summary.undecided}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">遅れる</div>
+                                  </div>
+                                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                                    <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                                      {summary.unanswered}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">未回答</div>
+                                  </div>
+                                </div>
+
+                                {unanswered.length > 0 && (
+                                  <div className="p-3 rounded-lg bg-muted/50">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                                      未回答者 ({unanswered.length}名)
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                      {unanswered.map((member) => (
+                                        <Badge key={member.id} variant="secondary" className="text-xs">
+                                          {member.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 未回答者促促パネル */}
+                                <UnansweredPanel event={event} responses={responses.filter((r) => r.eventId === event.id)} />
+
+                                <div>
+                                  <h4 className="text-sm font-semibold mb-3">回答詳細</h4>
+                                  <div className="space-y-2">
+                                    {members.map((member) => {
+                                      const response = responses.find(
+                                        (r) => r.eventId === event.id && r.memberId === member.id
+                                      );
+                                      const status: ResponseStatus = response?.status || "未回答";
+                                      return (
+                                        <div
+                                          key={member.id}
+                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-muted/30"
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <div className="font-medium text-sm truncate">
+                                              {member.name}
+                                              <span className="text-xs text-muted-foreground ml-2">
+                                                ({member.committee})
+                                              </span>
+                                            </div>
+                                            {response?.reason && (
+                                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                理由: {response.reason}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="shrink-0">
+                                            {getStatusBadge(status)}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
 
                         {/* ページネーション */}
                         {totalPages > 1 && (
@@ -1219,90 +1203,90 @@ export default function AdminPage() {
                         <>
                           {/* メンバーごとのビュー */}
                           {paginatedMembers.map((member) => (
-                      <div key={member.id} className="border rounded-lg overflow-hidden">
-                        <div className="bg-muted/50 px-4 py-3 border-b">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold text-base">{member.name}</h3>
-                              <p className="text-sm text-muted-foreground">{member.committee}</p>
-                            </div>
-                            <div className="flex gap-2 text-xs">
-                              {(() => {
-                                const memberResponses = responses.filter(r => r.memberId === member.id);
-                                const attended = memberResponses.filter(r => r.status === "参加").length;
-                                const absent = memberResponses.filter(r => r.status === "不参加").length;
-                                const undecided = memberResponses.filter(r => r.status === "遅れる").length;
-                                const unanswered = filteredEvents.length - memberResponses.filter(r =>
-                                  filteredEvents.some(e => e.id === r.eventId)
-                                ).length;
+                            <div key={member.id} className="border rounded-lg overflow-hidden">
+                              <div className="bg-muted/50 px-4 py-3 border-b">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h3 className="font-semibold text-base">{member.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{member.committee}</p>
+                                  </div>
+                                  <div className="flex gap-2 text-xs">
+                                    {(() => {
+                                      const memberResponses = responses.filter(r => r.memberId === member.id);
+                                      const attended = memberResponses.filter(r => r.status === "参加").length;
+                                      const absent = memberResponses.filter(r => r.status === "不参加").length;
+                                      const undecided = memberResponses.filter(r => r.status === "遅れる").length;
+                                      const unanswered = filteredEvents.length - memberResponses.filter(r =>
+                                        filteredEvents.some(e => e.id === r.eventId)
+                                      ).length;
 
-                                return (
-                                  <>
-                                    {attended > 0 && (
-                                      <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0">
-                                        参加 {attended}
-                                      </Badge>
-                                    )}
-                                    {absent > 0 && (
-                                      <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 border-0">
-                                        不参加 {absent}
-                                      </Badge>
-                                    )}
-                                    {undecided > 0 && (
-                                      <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
-                                        遅れる {undecided}
-                                      </Badge>
-                                    )}
-                                    {unanswered > 0 && (
-                                      <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900">
-                                        未回答 {unanswered}
-                                      </Badge>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {filteredEvents.map((event) => {
-                              const response = responses.find(
-                                (r) => r.eventId === event.id && r.memberId === member.id
-                              );
-                              const status: ResponseStatus = response?.status || "未回答";
-
-                              return (
-                                <div
-                                  key={event.id}
-                                  className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-medium text-sm truncate">{event.title}</h4>
-                                      <Badge variant="outline" className="text-xs shrink-0">
-                                        {event.type}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                      {format(new Date(event.dateTime), "M/d HH:mm")}
-                                    </p>
-                                    <div className="flex items-center justify-between">
-                                      {getStatusBadge(status)}
-                                    </div>
-                                    {response?.reason && (
-                                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                        {response.reason}
-                                      </p>
-                                    )}
+                                      return (
+                                        <>
+                                          {attended > 0 && (
+                                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0">
+                                              参加 {attended}
+                                            </Badge>
+                                          )}
+                                          {absent > 0 && (
+                                            <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 border-0">
+                                              不参加 {absent}
+                                            </Badge>
+                                          )}
+                                          {undecided > 0 && (
+                                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
+                                              遅れる {undecided}
+                                            </Badge>
+                                          )}
+                                          {unanswered > 0 && (
+                                            <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900">
+                                              未回答 {unanswered}
+                                            </Badge>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                              </div>
+                              <div className="p-4">
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                  {filteredEvents.map((event) => {
+                                    const response = responses.find(
+                                      (r) => r.eventId === event.id && r.memberId === member.id
+                                    );
+                                    const status: ResponseStatus = response?.status || "未回答";
+
+                                    return (
+                                      <div
+                                        key={event.id}
+                                        className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                                            <Badge variant="outline" className="text-xs shrink-0">
+                                              {event.type}
+                                            </Badge>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground mb-2">
+                                            {format(new Date(event.dateTime), "M/d HH:mm")}
+                                          </p>
+                                          <div className="flex items-center justify-between">
+                                            {getStatusBadge(status)}
+                                          </div>
+                                          {response?.reason && (
+                                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                                              {response.reason}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
 
                           {/* ページネーション */}
                           {totalPages > 1 && (
@@ -1348,30 +1332,6 @@ export default function AdminPage() {
           {/* 履歴タブ */}
           <TabsContent value="history" id="tab-content-history" className="space-y-4">
             <HistoryPanel events={events} responses={responses} members={members} />
-          </TabsContent>
-
-          <TabsContent value="tv-dashboard" id="tab-content-tv-dashboard" className="space-y-4">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">TV画面に移動します</p>
-              <Button
-                onClick={() => window.location.href = '/tv-dashboard'}
-                className="mt-4"
-              >
-                TV画面を開く
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="temp-events" id="tab-content-temp-events" className="space-y-4">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">今日のやることリストに移動します</p>
-              <Button
-                onClick={() => window.location.href = '/admin/events'}
-                className="mt-4"
-              >
-                今日のやることリストを開く
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
 

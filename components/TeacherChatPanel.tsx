@@ -219,7 +219,7 @@ export function TeacherChatPanel({ events }: TeacherChatPanelProps) {
                             `}</style>
                             <div
                                 className={`
-                                    max-w-xs px-4 py-2.5 rounded-lg text-sm
+                                    max-w-[85%] px-4 py-2.5 rounded-lg text-sm
                                     ${msg.role === "user"
                                         ? "bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-br-none shadow-sm"
                                         : "bg-card border border-border text-foreground rounded-bl-none shadow-sm"

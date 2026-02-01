@@ -186,15 +186,15 @@ export function TrendChart({ data, title = "トレンド分析" }: TrendChartPro
                             tick={{ fontSize: 12 }}
                         />
                         <YAxis />
-                        <Tooltip
-                            formatter={(value) => `${(value as number).toFixed(1)}%`}
-                            labelFormatter={(label) => `${label}`}
-                        /> content={<CustomTooltip />}     type="monotone"
-                        dataKey="responseRate"
-                        stroke={COLORS.attended}
-                        name="回答率"
-                        strokeWidth={2}
-                        
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Line
+                            type="monotone"
+                            dataKey="responseRate"
+                            stroke={COLORS.attended}
+                            name="回答率"
+                            strokeWidth={2}
+                        />
                         <Line
                             type="monotone"
                             dataKey="attendanceRate"

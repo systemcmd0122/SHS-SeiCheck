@@ -30,7 +30,6 @@ import { LoadingScreen } from "@/components/Loading";
 import { TodayEventsList } from "@/components/TodayEventsList";
 import { members } from "@/lib/members";
 import { UserCircle, LogIn, Settings, GraduationCap } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 const LAST_USER_KEY = "last_login_member_id";
 

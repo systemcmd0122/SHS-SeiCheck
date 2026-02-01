@@ -3,19 +3,10 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Share2, Copy, Trash2, Link as LinkIcon, MessageCircle } from "lucide-react";
 import type { Event, SharedResponse } from "@/lib/types";
 import { getSharedResponsesForEvent, createSharedResponse, deleteSharedResponse } from "@/lib/db";

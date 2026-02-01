@@ -33,11 +33,8 @@ export default function ChatPage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-gray-300 dark:border-slate-600 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
-                    <LoadingScreen />
-                </div>
+            <div>
+                <LoadingScreen />
             </div>
         );
     }

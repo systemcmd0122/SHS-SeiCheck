@@ -30,9 +30,14 @@ export async function createEvent(event: Omit<Event, "id" | "createdAt">): Promi
   const eventId = eventRef.id;
 
   const eventData: Event = {
-    ...event,
     id: eventId,
     createdAt: new Date().toISOString(),
+    title: event.title,
+    type: event.type,
+    dateTime: event.dateTime,
+    deadline: event.deadline,
+    createdBy: event.createdBy,
+    ...(event.description && { description: event.description }),
   };
 
   await setDoc(eventRef, eventData);

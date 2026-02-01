@@ -26,6 +26,7 @@ export interface Event {
   deadline: string; // ISO 8601形式
   createdAt: string;
   createdBy: string;
+  description?: string;
 }
 
 // 回答の型定義
@@ -74,6 +75,7 @@ export interface Announcement {
   createdAt: string;
   createdBy: string;
   updatedAt?: string;
+  isTeacher?: boolean; // 先生が投稿したかどうか
 }
 
 // お知らせの優先度

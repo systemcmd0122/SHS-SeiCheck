@@ -92,7 +92,7 @@ import {
 import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
-import { AnnouncementDialog, ShareLinkDialog } from "@/components/CommonDialogs";
+import { AnnouncementDialog, ShareLinkDialog, AddEventDialog } from "@/components/CommonDialogs";
 
 import { useRouter } from "next/navigation";
 import { LoadingScreen } from "@/components/Loading";
@@ -106,6 +106,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [selectedEventType, setSelectedEventType] = useState<EventType | "全て">("全て");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -160,6 +161,12 @@ export default function AdminPage() {
     date: "",
     time: "",
     deadlineDate: "",
+  });
+
+  const [newCalendarEvent, setNewCalendarEvent] = useState({
+    title: "",
+    description: "",
+    date: "",
   });
 
   const [newAnnouncement, setNewAnnouncement] = useState({
@@ -251,6 +258,37 @@ export default function AdminPage() {
       // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定作成エラー:", error);
+      alert("予定の作成に失敗しました");
+    }
+  };
+
+  const handleCreateCalendarEvent = async () => {
+    if (!newCalendarEvent.title || !newCalendarEvent.date) {
+      alert("タイトルと開催日を入力してください");
+      return;
+    }
+
+    try {
+      const dateTime = `${newCalendarEvent.date}T00:00:00`;
+      const deadline = `${newCalendarEvent.date}T23:59:00`;
+
+      await createEvent({
+        title: newCalendarEvent.title,
+        type: "その他",
+        dateTime: dateTime,
+        deadline: deadline,
+        createdBy: "admin",
+        description: newCalendarEvent.description,
+      });
+
+      setIsAddEventDialogOpen(false);
+      setNewCalendarEvent({
+        title: "",
+        description: "",
+        date: "",
+      });
+    } catch (error) {
+      console.error("カレンダーからの予定作成エラー:", error);
       alert("予定の作成に失敗しました");
     }
   };
@@ -917,6 +955,7 @@ export default function AdminPage() {
                 .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
               includeGoogleCalendar={true}
               googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+              onAddEvent={() => setIsAddEventDialogOpen(true)}
             />
           </TabsContent>
 
@@ -1396,6 +1435,55 @@ export default function AdminPage() {
             />
           </div>
         </AnnouncementDialog>
+
+        {/* 予定追加ダイアログ (カレンダー用) */}
+        <AddEventDialog
+          isOpen={isAddEventDialogOpen}
+          onOpenChange={setIsAddEventDialogOpen}
+          onSubmit={handleCreateCalendarEvent}
+          onCancel={() => {
+            setNewCalendarEvent({
+              title: "",
+              description: "",
+              date: "",
+            });
+          }}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="calendar-event-title">タイトル</Label>
+            <Input
+              id="calendar-event-title"
+              value={newCalendarEvent.title}
+              onChange={(e) =>
+                setNewCalendarEvent({ ...newCalendarEvent, title: e.target.value })
+              }
+              placeholder="例: 臨時集会"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="calendar-event-date">開催日</Label>
+            <Input
+              id="calendar-event-date"
+              type="date"
+              value={newCalendarEvent.date}
+              onChange={(e) =>
+                setNewCalendarEvent({ ...newCalendarEvent, date: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="calendar-event-description">説明（オプション）</Label>
+            <Textarea
+              id="calendar-event-description"
+              value={newCalendarEvent.description}
+              onChange={(e) =>
+                setNewCalendarEvent({ ...newCalendarEvent, description: e.target.value })
+              }
+              placeholder="予定の詳細などを入力"
+              rows={3}
+            />
+          </div>
+        </AddEventDialog>
 
         {/* 共有ダイアログ */}
         <Dialog open={!!selectedEventForShare} onOpenChange={(open) => {

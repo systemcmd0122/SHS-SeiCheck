@@ -29,7 +29,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingScreen } from "@/components/Loading";
 import { TodayEventsList } from "@/components/TodayEventsList";
 import { members } from "@/lib/members";
-import { UserCircle, LogIn, Settings } from "lucide-react";
+import { UserCircle, LogIn, Settings, GraduationCap } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const LAST_USER_KEY = "last_login_member_id";
 
@@ -89,6 +90,18 @@ export function MemberSelectionPage({
         setLastMemberId(null);
     };
 
+    const handleTeacherAccess = () => {
+        sessionStorage.setItem(
+            "teacherInfo",
+            JSON.stringify({
+                id: `teacher_${Date.now()}`,
+                name: "先生",
+                department: "生徒会顧問",
+            })
+        );
+        router.push("/teacher");
+    };
+
     const handleAdminAccess = () => {
         router.push("/admin");
     };
@@ -139,6 +152,23 @@ export function MemberSelectionPage({
 
             {showAdminButton && (
                 <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-2">
+                    <Button
+                        onClick={handleTeacherAccess}
+                        variant="outline"
+                        className="hidden sm:flex items-center gap-2"
+                    >
+                        <GraduationCap className="w-4 h-4" />
+                        先生はこちら
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleTeacherAccess}
+                        className="sm:hidden text-muted-foreground hover:text-foreground"
+                        title="先生ログイン"
+                    >
+                        <GraduationCap className="w-5 h-5" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"

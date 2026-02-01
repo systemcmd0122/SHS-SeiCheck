@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, X, Share2, Zap, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
     Dialog,
     DialogContent,
@@ -15,6 +16,13 @@ import {
     DialogTitle,
     DialogClose,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ClassroomCopyDialog } from "@/components/ClassroomCopyDialog";
 
 interface GoogleCalendarEvent {
     id: string;
@@ -27,6 +35,7 @@ interface GoogleCalendarEvent {
 interface EventCalendarProps {
     events: any[]; // 独自DBイベント用
     onEventClick?: (event: any) => void;
+    onAddEvent?: () => void;
     includeGoogleCalendar?: boolean;
     googleCalendarId?: string;
     highlightDates?: string[]; // YYYY-MM-DD形式の強調表示日付
@@ -36,6 +45,7 @@ interface EventCalendarProps {
 export function EventCalendar({
     events = [],
     onEventClick,
+    onAddEvent,
     includeGoogleCalendar = true,
     googleCalendarId = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID || "",
     highlightDates = [],
@@ -45,6 +55,8 @@ export function EventCalendar({
     const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [classroomCopyOpen, setClassroomCopyOpen] = useState(false);
+    const [selectedGoogleEvents, setSelectedGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
 
     useEffect(() => {
         if (!includeGoogleCalendar) return;
@@ -132,6 +144,23 @@ export function EventCalendar({
                     </CardTitle>
                     <div className="flex gap-2 items-center flex-shrink-0">
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        {googleEvents.length > 0 && (
+                            <Link href="/planning-chat">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/30"
+                                    title="予定計画アシスタント（全画面）"
+                                >
+                                    <Zap className="w-5 h-5" />
+                                </Button>
+                            </Link>
+                        )}
+                        {onAddEvent && (
+                            <Button variant="ghost" size="icon" onClick={onAddEvent} className="text-primary hover:bg-primary/10">
+                                <Plus className="w-5 h-5" />
+                            </Button>
+                        )}
                         <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}>
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
@@ -294,7 +323,21 @@ export function EventCalendar({
                         )}
                     </div>
 
-                    <div className="flex justify-end pt-4 border-t flex-shrink-0">
+                    <div className="flex justify-between gap-2 pt-4 border-t flex-shrink-0">
+                        {selectedDateGoogleEvents.length > 0 && (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    setSelectedGoogleEvents(selectedDateGoogleEvents);
+                                    setClassroomCopyOpen(true);
+                                }}
+                            >
+                                <Share2 className="w-4 h-4" />
+                                Classroomに共有
+                            </Button>
+                        )}
                         <DialogClose asChild>
                             <Button variant="outline" size="sm" className="mt-2">
                                 <X className="w-4 h-4 mr-2" />
@@ -303,7 +346,14 @@ export function EventCalendar({
                         </DialogClose>
                     </div>
                 </DialogContent>
-            </Dialog >
+            </Dialog>
+
+            {/* Google Classroom共有ダイアログ */}
+            <ClassroomCopyDialog
+                open={classroomCopyOpen}
+                onOpenChange={setClassroomCopyOpen}
+                events={selectedGoogleEvents}
+            />
         </>
     );
 }

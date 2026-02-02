@@ -956,6 +956,7 @@ export default function AdminPage() {
               includeGoogleCalendar={true}
               googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
               onAddEvent={() => setIsAddEventDialogOpen(true)}
+              onDeleteEvent={handleDeleteEvent}
             />
           </TabsContent>
 

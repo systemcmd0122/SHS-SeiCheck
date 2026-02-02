@@ -1,6 +1,7 @@
 const CACHE_NAME = 'shs-sei-check-v1';
 const RUNTIME_CACHE = 'shs-sei-check-runtime';
 const ASSETS_CACHE = 'shs-sei-check-assets';
+const CHUNK_CACHE = 'shs-sei-check-chunks'; // チャンクキャッシュを分離
 
 // 開発環境判定
 const isDevelopment = self.location.origin.includes('localhost') || self.location.origin.includes('192.168');
@@ -20,6 +21,11 @@ self.addEventListener('install', (event) => {
             caches.open(ASSETS_CACHE).then((cache) => {
                 return cache.addAll([]).catch((err) => {
                     console.log('Assets cache error:', err);
+                });
+            }),
+            caches.open(CHUNK_CACHE).then((cache) => {
+                return cache.addAll([]).catch((err) => {
+                    console.log('Chunk cache error:', err);
                 });
             })
         ])
@@ -157,23 +163,34 @@ self.addEventListener('fetch', (event) => {
                     })
             );
         } else {
+            // チャンク（_next/static/chunks）と通常のJSを区別
+            const isChunk = url.pathname.includes('/_next/static/chunks/');
+            const cacheName = isChunk ? CHUNK_CACHE : ASSETS_CACHE;
+
             event.respondWith(
-                caches.match(request).then((response) => {
-                    return (
-                        response ||
-                        fetch(request, { priority: 'high' }).then((response) => {
-                            if (response && response.status === 200) {
-                                const responseToCache = response.clone();
-                                caches.open(ASSETS_CACHE).then((cache) => {
-                                    cache.put(request, responseToCache);
-                                });
+                fetch(request, { priority: 'high' })
+                    .then((response) => {
+                        // 成功したレスポンスのみキャッシュ
+                        if (response && response.status === 200) {
+                            const responseToCache = response.clone();
+                            caches.open(cacheName).then((cache) => {
+                                cache.put(request, responseToCache);
+                            });
+                        }
+                        return response;
+                    })
+                    .catch(() => {
+                        // ネットワークエラー時はキャッシュを試す
+                        return caches.match(request).then((cachedResponse) => {
+                            if (cachedResponse) {
+                                console.log('[SW] Serving from cache (chunk):', url.pathname);
+                                return cachedResponse;
                             }
-                            return response;
-                        })
-                    );
-                }).catch(() => {
-                    return new Response('', { status: 404 });
-                })
+                            // キャッシュもない場合はネットワークエラーを返す
+                            console.log('[SW] Chunk load error, no cache available:', url.pathname);
+                            return new Response('', { status: 404 });
+                        });
+                    })
             );
         }
         return;

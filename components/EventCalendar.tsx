@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ja } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Loader2, Plus, X, Share2, Zap, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Plus, X, Share2, Zap, Maximize2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ interface EventCalendarProps {
     events: any[]; // 独自DBイベント用
     onEventClick?: (event: any) => void;
     onAddEvent?: () => void;
+    onDeleteEvent?: (eventId: string) => void; // 削除ハンドラーを追加
     includeGoogleCalendar?: boolean;
     googleCalendarId?: string;
     highlightDates?: string[]; // YYYY-MM-DD形式の強調表示日付
@@ -40,6 +41,7 @@ export function EventCalendar({
     events = [],
     onEventClick,
     onAddEvent,
+    onDeleteEvent, // 削除ハンドラーを追加
     includeGoogleCalendar = true,
     googleCalendarId = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID || "",
     highlightDates = [],
@@ -251,37 +253,95 @@ export function EventCalendar({
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
-                        {/* 独自DB予定 */}
-                        {selectedDateDBEvents.length > 0 && (
-                            <div>
-                                <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
-                                    <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-600 flex-shrink-0"></div>
-                                    <span>出欠確認予定 ({selectedDateDBEvents.length}件)</span>
-                                </h3>
-                                <div className="space-y-2">
-                                    {selectedDateDBEvents.map((event) => (
-                                        <div
-                                            key={event.id}
-                                            className={`p-3 sm:p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-900/20 ${onEventClick ? 'hover:bg-green-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
-                                            onClick={() => {
-                                                onEventClick?.(event);
-                                                setSelectedDate(null);
-                                            }}
-                                        >
-                                            <div className="flex items-start justify-between gap-2 sm:gap-3">
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
-                                                    <Badge variant="outline" className="mt-2 text-xs">
-                                                        {event.type}
-                                                    </Badge>
+                        {/* 出欠確認予定（その他以外） */}
+                        {(() => {
+                            const attendanceEvents = selectedDateDBEvents.filter(e => e.type !== "その他");
+                            return attendanceEvents.length > 0 ? (
+                                <div>
+                                    <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
+                                        <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-600 flex-shrink-0"></div>
+                                        <span>出欠確認予定 ({attendanceEvents.length}件)</span>
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {attendanceEvents.map((event) => (
+                                            <div
+                                                key={event.id}
+                                                className={`p-3 sm:p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-900/20 ${onEventClick ? 'hover:bg-green-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                                    <div
+                                                        className="flex-1 min-w-0"
+                                                        onClick={() => {
+                                                            onEventClick?.(event);
+                                                            setSelectedDate(null);
+                                                        }}
+                                                    >
+                                                        <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
+                                                        <Badge variant="outline" className="mt-2 text-xs">
+                                                            {event.type}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
+                                                    </div>
                                                 </div>
-                                                {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            ) : null;
+                        })()}
+
+                        {/* カレンダーから追加した予定（その他） */}
+                        {(() => {
+                            const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他");
+                            return calendarEvents.length > 0 ? (
+                                <div>
+                                    <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                                        <div className="w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-600 flex-shrink-0"></div>
+                                        <span>カレンダー予定 ({calendarEvents.length}件)</span>
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {calendarEvents.map((event) => (
+                                            <div
+                                                key={event.id}
+                                                className={`p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20 ${onEventClick ? 'hover:bg-blue-100 cursor-pointer transition-colors dark:hover:bg-blue-900/40' : ''}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                                                    <div
+                                                        className="flex-1 min-w-0"
+                                                        onClick={() => {
+                                                            onEventClick?.(event);
+                                                            setSelectedDate(null);
+                                                        }}
+                                                    >
+                                                        <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
+                                                        <Badge variant="outline" className="mt-2 text-xs">
+                                                            {event.type}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
+                                                        {onDeleteEvent && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteEvent(event.id);
+                                                                }}
+                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 p-2 rounded transition-colors"
+                                                                title="削除"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
 
                         {/* Google Calendar予定 */}
                         {selectedDateGoogleEvents.length > 0 && (
@@ -318,20 +378,32 @@ export function EventCalendar({
                     </div>
 
                     <div className="flex justify-between gap-2 pt-4 border-t flex-shrink-0">
-                        {selectedDateGoogleEvents.length > 0 && (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                className="flex items-center gap-2"
-                                onClick={() => {
-                                    setSelectedGoogleEvents(selectedDateGoogleEvents);
-                                    setClassroomCopyOpen(true);
-                                }}
-                            >
-                                <Share2 className="w-4 h-4" />
-                                Classroomに共有
-                            </Button>
-                        )}
+                        {(selectedDateGoogleEvents.length > 0 || (() => {
+                            const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他");
+                            return calendarEvents.length > 0;
+                        })()) && (
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="flex items-center gap-2"
+                                    onClick={() => {
+                                        // Google CalendarイベントとカレンダーDB予定を変換して共有
+                                        const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他").map(event => ({
+                                            id: event.id,
+                                            title: event.title,
+                                            description: event.description || "",
+                                            startTime: event.dateTime,
+                                            endTime: event.dateTime,
+                                        }));
+                                        const allEventsToShare = [...selectedDateGoogleEvents, ...calendarEvents];
+                                        setSelectedGoogleEvents(allEventsToShare);
+                                        setClassroomCopyOpen(true);
+                                    }}
+                                >
+                                    <Share2 className="w-4 h-4" />
+                                    Classroomに共有
+                                </Button>
+                            )}
                         <DialogClose asChild>
                             <Button variant="outline" size="sm" className="mt-2">
                                 <X className="w-4 h-4 mr-2" />

@@ -74,6 +74,7 @@ import {
     AttendanceRateChart,
 } from "@/components/TeacherCharts";
 import { TeacherChatPanel } from "@/components/TeacherChatPanel";
+import { EventCalendar } from "@/components/EventCalendar";
 import type { GoogleCalendarEvent } from "@/lib/google-calendar";
 
 interface TeacherInfo {
@@ -301,6 +302,19 @@ export default function TeacherPage() {
     // ダッシュボードのレンダリング
     const renderOverview = () => (
         <div className="space-y-6">
+            {/* カレンダー */}
+            <EventCalendar
+                events={events}
+                includeGoogleCalendar={true}
+                googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+                highlightDates={events
+                    .filter((e) => {
+                        const eventDate = new Date(e.dateTime);
+                        return eventDate >= new Date();
+                    })
+                    .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                     <CardHeader className="pb-3">

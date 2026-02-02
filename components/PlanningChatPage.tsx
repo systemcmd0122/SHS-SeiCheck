@@ -4,7 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import {
     Loader2,
     Send,
@@ -16,6 +26,9 @@ import {
     ChevronLeft,
     ChevronRight,
     X,
+    Plus,
+    Trash2,
+    Edit,
 } from "lucide-react";
 import { GoogleCalendarEvent } from "@/lib/google-calendar";
 import {
@@ -24,6 +37,7 @@ import {
     sendMessageToGemini,
     generateInitialMessage,
 } from "@/lib/gemini-chat";
+import { createEvent, updateEvent, deleteEvent } from "@/lib/db";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import {
@@ -38,6 +52,12 @@ import { ja } from "date-fns/locale";
 interface PlanningChatPageProps {
     events: GoogleCalendarEvent[];
     backHref?: string;
+}
+
+interface AddEventFormData {
+    title: string;
+    description: string;
+    date: string;
 }
 
 // ─── イベント色パレット（カレンダー上で視覚的に分離） ───
@@ -61,6 +81,19 @@ function getEventColor(title: string): string {
 }
 
 export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPageProps) {
+    // ────────────────────────────────
+    // DBイベントをGoogle Calendar形式に変換（時間は00:00:00に統一）
+    // ────────────────────────────────
+    const convertDbEventToCalendarEvent = (event: any) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || "",
+        // 時間を00:00:00に統一してAIの精度を向上
+        startTime: event.dateTime.split('T')[0] + 'T00:00:00',
+        endTime: event.deadline.split('T')[0] + 'T23:59:00',
+        location: "",
+    });
+
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputMessage, setInputMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +103,15 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
     const [calendarWidth, setCalendarWidth] = useState(320); // デフォルト 320px
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<any>(null);
+    const [formData, setFormData] = useState<AddEventFormData>({
+        title: "",
+        description: "",
+        date: "",
+    });
+    const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+    const [dbEvents, setDbEvents] = useState<any[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     const isResizing = useRef(false);
     const startX = useRef(0);
@@ -113,7 +155,23 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
     // ── 初期化 ──
     useEffect(() => {
         if (!initialized) {
-            const initialMsg = generateInitialMessage(events);
+            // Google Calendarイベント＋DBイベントを組み合わせて初期メッセージを生成
+            const combinedEvents = [
+                ...events,
+                ...dbEvents.map(event => ({
+                    id: event.id,
+                    title: event.title,
+                    description: event.description || "",
+                    // DBイベントの時間を00:00:00に統一してAI精度を向上
+                    startTime: event.dateTime.split('T')[0] + 'T00:00:00',
+                    endTime: event.deadline.split('T')[0] + 'T23:59:00',
+                    location: "",
+                }))
+            ];
+            // 現在日時情報をAIに伝える
+            const today = new Date();
+            const todayStr = format(today, "yyyy年M月d日", { locale: ja });
+            const initialMsg = generateInitialMessage(combinedEvents) + `\n\n**本日は ${todayStr} です。**`;
             setMessages([
                 {
                     role: "assistant",
@@ -123,7 +181,25 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
             ]);
             setInitialized(true);
         }
-    }, [events, initialized]);
+    }, [events, dbEvents, initialized]);
+
+    // ── DBイベントの読み込み ──
+    useEffect(() => {
+        const loadDbEvents = async () => {
+            try {
+                const response = await fetch("/api/events");
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && Array.isArray(data.data)) {
+                        setDbEvents(data.data);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load DB events:", error);
+            }
+        };
+        loadDbEvents();
+    }, []);
 
     // ── 自動スクロール ──
     useEffect(() => {
@@ -148,17 +224,49 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
         setIsLoading(true);
 
         try {
+            // 現在日時情報をコンテキストに含める
+            const today = new Date();
+            const todayStr = format(today, "yyyy年M月d日", { locale: ja });
+
             const context: PlanningContext = {
-                events,
+                events: [
+                    ...events,
+                    // DBから追加された予定（カレンダー予定）をGoogle Calendar形式に変換
+                    ...dbEvents.map(event => ({
+                        id: event.id,
+                        title: event.title,
+                        description: event.description || "",
+                        // 時間を00:00:00に統一してAI精度を向上
+                        startTime: event.dateTime.split('T')[0] + 'T00:00:00',
+                        endTime: event.deadline.split('T')[0] + 'T23:59:00',
+                        location: "",
+                    }))
+                ],
                 upcomingDays: 30,
             };
 
+            const combinedEventsForFilter = [
+                ...events,
+                ...dbEvents.map(event => ({
+                    id: event.id,
+                    title: event.title,
+                    description: event.description || "",
+                    // 時間を00:00:00に統一
+                    startTime: event.dateTime.split('T')[0] + 'T00:00:00',
+                    endTime: event.deadline.split('T')[0] + 'T23:59:00',
+                    location: "",
+                }))
+            ];
+
             const apiMessages = [...messages, userMsg].filter(
-                (msg) => msg.content !== generateInitialMessage(events)
+                (msg) => msg.content !== generateInitialMessage(combinedEventsForFilter)
             );
 
+            // 本日の日付をメッセージに追加
+            const messageWithDate = `【本日: ${todayStr}】\n\n${inputMessage}`;
+
             const response = await sendMessageToGemini(
-                inputMessage,
+                messageWithDate,
                 apiMessages,
                 context
             );
@@ -189,6 +297,99 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
             setMessages((prev) => [...prev, errorChatMsg]);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // ── 予定追加・編集関数 ──
+    const handleOpenAddEventDialog = () => {
+        setEditingEvent(null);
+        setFormData({
+            title: "",
+            description: "",
+            date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        });
+        setShowAddEventDialog(true);
+    };
+
+    const handleEditEvent = (event: any) => {
+        setEditingEvent(event);
+        setFormData({
+            title: event.title,
+            description: event.description || "",
+            date: format(new Date(event.dateTime), "yyyy-MM-dd"),
+        });
+        setShowAddEventDialog(true);
+    };
+
+    const handleSaveEvent = async () => {
+        if (!formData.title.trim() || !formData.date) {
+            alert("タイトルと日付を入力してください");
+            return;
+        }
+
+        setIsSubmittingEvent(true);
+        try {
+            const dateTime = `${formData.date}T00:00:00`;
+            const deadline = `${formData.date}T23:59:00`;
+
+            if (editingEvent) {
+                // 編集
+                await updateEvent(editingEvent.id, {
+                    title: formData.title,
+                    description: formData.description,
+                    dateTime: dateTime,
+                    deadline: deadline,
+                });
+            } else {
+                // 新規作成
+                await createEvent({
+                    title: formData.title,
+                    type: "その他",
+                    dateTime: dateTime,
+                    deadline: deadline,
+                    createdBy: "admin",
+                    description: formData.description,
+                });
+            }
+
+            // イベント一覧を再読み込み
+            const response = await fetch("/api/events");
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.data)) {
+                    setDbEvents(data.data);
+                }
+            }
+
+            setShowAddEventDialog(false);
+            setEditingEvent(null);
+            setFormData({ title: "", description: "", date: "" });
+        } catch (error) {
+            console.error("Failed to save event:", error);
+            alert("予定の保存に失敗しました");
+        } finally {
+            setIsSubmittingEvent(false);
+        }
+    };
+
+    const handleDeleteEvent = async (eventId: string) => {
+        if (!confirm("この予定を削除してもよろしいですか?")) {
+            return;
+        }
+
+        try {
+            await deleteEvent(eventId);
+            // イベント一覧を再読み込み
+            const response = await fetch("/api/events");
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.data)) {
+                    setDbEvents(data.data);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to delete event:", error);
+            alert("予定の削除に失敗しました");
         }
     };
 
@@ -263,6 +464,12 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
 
     // 選択日のイベント
     const selectedDayEvents = selectedDate ? getEventsForDate(selectedDate) : [];
+    const selectedDateDBEvents = selectedDate
+        ? dbEvents.filter((e) => {
+            const eventDate = format(new Date(e.dateTime), "yyyy-MM-dd");
+            return eventDate === format(selectedDate, "yyyy-MM-dd");
+        })
+        : [];
 
     // ── UI ──
     return (
@@ -678,63 +885,120 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                                     : "日付を選択してください"}
                             </h3>
                             {selectedDate && (
-                                <span className="text-xs text-gray-400 dark:text-gray-500">
-                                    {selectedDayEvents.length}件
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                                        {selectedDayEvents.length + selectedDateDBEvents.length}件
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 w-6 p-0"
+                                        onClick={handleOpenAddEventDialog}
+                                        title="予定を追加"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             )}
                         </div>
 
+                        {/* DB予定 */}
+                        {selectedDate && selectedDateDBEvents.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">カレンダー予定</p>
+                                {selectedDateDBEvents.map((event) => (
+                                    <div
+                                        key={event.id}
+                                        className="flex items-start gap-2.5 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                                    >
+                                        <span className="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 bg-blue-500" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                {event.title}
+                                            </p>
+                                            {event.description && (
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                                                    {event.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-1 shrink-0">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                                                onClick={() => handleEditEvent(event)}
+                                            >
+                                                <Edit className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                                onClick={() => handleDeleteEvent(event.id)}
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* イベントリスト */}
                         {selectedDate && selectedDayEvents.length > 0 ? (
-                            <div className="space-y-2">
-                                {selectedDayEvents.map((event, idx) => {
-                                    const colorClass = getEventColor(event.title);
-                                    return (
-                                        <div
-                                            key={idx}
-                                            className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
-                                        >
-                                            {/* カラードット */}
-                                            <span
-                                                className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${colorClass}`}
-                                            />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                    {event.title}
-                                                </p>
-                                                {(() => {
-                                                    if (!event.startTime) return null;
-                                                    const startDate = new Date(event.startTime);
-                                                    const startHH = startDate.getHours();
-                                                    const startMM = startDate.getMinutes();
-                                                    const isAllDay =
-                                                        startHH === 0 &&
-                                                        startMM === 0 &&
-                                                        (!event.endTime ||
-                                                            (() => {
-                                                                const endDate = new Date(event.endTime);
-                                                                return endDate.getHours() === 0 && endDate.getMinutes() === 0;
-                                                            })());
-                                                    if (isAllDay) return null;
-                                                    return (
-                                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                                            {format(startDate, "HH:mm", { locale: ja })}
-                                                            {event.endTime &&
-                                                                ` – ${format(new Date(event.endTime), "HH:mm", { locale: ja })}`}
-                                                        </p>
-                                                    );
-                                                })()}
-                                                {event.location && (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                                                        📍 {event.location}
+                            <div>
+                                <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">Google Calendar</p>
+                                <div className="space-y-2">
+                                    {selectedDayEvents.map((event, idx) => {
+                                        const colorClass = getEventColor(event.title);
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700"
+                                            >
+                                                {/* カラードット */}
+                                                <span
+                                                    className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${colorClass}`}
+                                                />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                        {event.title}
                                                     </p>
-                                                )}
+                                                    {(() => {
+                                                        if (!event.startTime) return null;
+                                                        const startDate = new Date(event.startTime);
+                                                        const startHH = startDate.getHours();
+                                                        const startMM = startDate.getMinutes();
+                                                        const isAllDay =
+                                                            startHH === 0 &&
+                                                            startMM === 0 &&
+                                                            (!event.endTime ||
+                                                                (() => {
+                                                                    const endDate = new Date(event.endTime);
+                                                                    return endDate.getHours() === 0 && endDate.getMinutes() === 0;
+                                                                })());
+                                                        if (isAllDay) return null;
+                                                        return (
+                                                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                                                {format(startDate, "HH:mm", { locale: ja })}
+                                                                {event.endTime &&
+                                                                    ` – ${format(new Date(event.endTime), "HH:mm", { locale: ja })}`}
+                                                            </p>
+                                                        );
+                                                    })()}
+                                                    {event.location && (
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                                                            📍 {event.location}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        ) : selectedDate ? (
+                        ) : selectedDate && selectedDateDBEvents.length === 0 && selectedDayEvents.length === 0 ? (
                             <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">
                                 この日に予定はありません
                             </p>
@@ -748,6 +1012,75 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                     </div>
                 </div>
             </div>
+
+            {/* 予定追加・編集ダイアログ */}
+            <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
+                <DialogContent className="w-[95vw] sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editingEvent ? "予定を編集" : "予定を追加"}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {selectedDate ? format(selectedDate, "yyyy年M月d日(E)", { locale: ja }) : "新しい予定を追加"}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="event-title">タイトル</Label>
+                            <Input
+                                id="event-title"
+                                placeholder="予定のタイトル"
+                                value={formData.title}
+                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="event-date">日付</Label>
+                            <Input
+                                id="event-date"
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="event-description">説明（オプション）</Label>
+                            <Textarea
+                                id="event-description"
+                                placeholder="予定の詳細"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowAddEventDialog(false)}
+                        >
+                            キャンセル
+                        </Button>
+                        <Button
+                            onClick={handleSaveEvent}
+                            disabled={isSubmittingEvent}
+                        >
+                            {isSubmittingEvent ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    保存中...
+                                </>
+                            ) : (
+                                editingEvent ? "更新" : "追加"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -25,7 +25,9 @@ export const metadata: Metadata = {
   title: "生徒会出欠管理システム",
   description: "生徒会メンバーの出欠を管理するアプリケーション",
   manifest: "/manifest.json",
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+  ),
   openGraph: {
     title: "生徒会出欠管理システム",
     description: "生徒会メンバーの出欠を管理するアプリケーション",
@@ -53,20 +55,8 @@ export const metadata: Metadata = {
     title: "出欠管理",
   },
   icons: {
-    icon: [
-      {
-        url: "/icon.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
-    ],
-    apple: [
-      {
-        url: "/icon.png",
-        sizes: "512x512",
-        type: "image/png",
-      },
-    ],
+    icon: "/favicon.ico",
+    apple: "/icon.png",
   },
 };
 

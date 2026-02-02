@@ -369,7 +369,7 @@ export default function AdminPage() {
 
   const filteredEvents =
     selectedEventType === "全て"
-      ? events
+      ? events.filter((e) => e.type !== "その他")
       : events.filter((e) => e.type === selectedEventType);
 
   const getUnansweredMembers = (eventId: string) => {
@@ -951,7 +951,7 @@ export default function AdminPage() {
             <EventCalendar
               events={events}
               highlightDates={events
-                .filter((e) => getUnansweredMembers(e.id).length > 0)
+                .filter((e) => e.type !== "その他" && getUnansweredMembers(e.id).length > 0)
                 .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
               includeGoogleCalendar={true}
               googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
@@ -974,7 +974,7 @@ export default function AdminPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="全て">全て</SelectItem>
-                      {EVENT_TYPES.map((type) => (
+                      {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
                         <SelectItem key={type} value={type}>
                           {type}
                         </SelectItem>

@@ -21,7 +21,7 @@ export function SwRegister() {
                     console.log('✓ Service Worker registered:', registration);
 
                     // 定期的にアップデートをチェック（開発環境では5秒ごと）
-                    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168');
+                    const isDevelopment = (window as any).location.hostname === 'localhost' || (window as any).location.hostname.startsWith('192.168');
                     const checkInterval = isDevelopment ? 5000 : 60000; // 開発環境: 5秒, 本番環境: 60秒
 
                     const updateCheckInterval = setInterval(() => {
@@ -88,11 +88,11 @@ export function SwRegister() {
                             })
                         ).then(() => {
                             console.log('✓ All caches cleared, reloading...');
-                            window.location.reload();
+                            (window as any).location.reload();
                         });
                     });
                 } else {
-                    window.location.reload();
+                    (window as any).location.reload();
                 }
             }
         };

@@ -97,6 +97,7 @@ import { AnnouncementDialog, ShareLinkDialog, AddEventDialog } from "@/component
 import { useRouter } from "next/navigation";
 import { LoadingScreen } from "@/components/Loading";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { clearAllSession, getErrorMessage } from "@/lib/utils";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -188,6 +189,8 @@ export default function AdminPage() {
       setAnnouncements(announcementsData);
     } catch (error) {
       console.error("データ読み込みエラー:", error);
+      const errorMessage = getErrorMessage(error);
+      alert("データの読み込みに失敗しました: " + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -225,8 +228,19 @@ export default function AdminPage() {
   }, [activeTab]);
 
   const handleCreateEvent = async () => {
+    // バリデーション
     if (!newEvent.title || !newEvent.date || !newEvent.deadlineDate) {
       alert("タイトル、開催日、締切日を入力してください");
+      return;
+    }
+
+    if (newEvent.title.trim().length < 1 || newEvent.title.length > 100) {
+      alert("タイトルは1文字以上100文字以下で入力してください");
+      return;
+    }
+
+    if (new Date(newEvent.date) > new Date(newEvent.deadlineDate)) {
+      alert("開催日は締切日以前の日付を選択してください");
       return;
     }
 
@@ -258,13 +272,24 @@ export default function AdminPage() {
       // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定作成エラー:", error);
-      alert("予定の作成に失敗しました");
+      const errorMessage = getErrorMessage(error);
+      alert("予定の作成に失敗しました: " + errorMessage);
     }
   };
 
   const handleCreateCalendarEvent = async () => {
     if (!newCalendarEvent.title || !newCalendarEvent.date) {
       alert("タイトルと開催日を入力してください");
+      return;
+    }
+
+    if (newCalendarEvent.title.trim().length < 1 || newCalendarEvent.title.length > 100) {
+      alert("タイトルは1文字以上100文字以下で入力してください");
+      return;
+    }
+
+    if (newCalendarEvent.description && newCalendarEvent.description.length > 500) {
+      alert("説明は500文字以下で入力してください");
       return;
     }
 
@@ -289,13 +314,24 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("カレンダーからの予定作成エラー:", error);
-      alert("予定の作成に失敗しました");
+      const errorMessage = getErrorMessage(error);
+      alert("予定の作成に失敗しました: " + errorMessage);
     }
   };
 
   const handleCreateAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.content) {
       alert("タイトルと内容を入力してください");
+      return;
+    }
+
+    if (newAnnouncement.title.trim().length < 1 || newAnnouncement.title.length > 100) {
+      alert("タイトルは1文字以上100文字以下で入力してください");
+      return;
+    }
+
+    if (newAnnouncement.content.trim().length < 1 || newAnnouncement.content.length > 2000) {
+      alert("内容は1文字以上2000文字以下で入力してください");
       return;
     }
 
@@ -325,7 +361,8 @@ export default function AdminPage() {
       // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ作成エラー:", error);
-      alert("お知らせの作成に失敗しました");
+      const errorMessage = getErrorMessage(error);
+      alert("お知らせの作成に失敗しました: " + errorMessage);
     }
   };
 
@@ -349,7 +386,8 @@ export default function AdminPage() {
       // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ削除エラー:", error);
-      alert("お知らせの削除に失敗しました");
+      const errorMessage = getErrorMessage(error);
+      alert("お知らせの削除に失敗しました: " + errorMessage);
     }
   };
 
@@ -363,7 +401,8 @@ export default function AdminPage() {
       // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定削除エラー:", error);
-      alert("予定の削除に失敗しました");
+      const errorMessage = getErrorMessage(error);
+      alert("予定の削除に失敗しました: " + errorMessage);
     }
   };
 

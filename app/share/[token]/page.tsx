@@ -46,6 +46,7 @@ import {
 } from "@/lib/db";
 import type { Event, Response, ResponseStatus, Member } from "@/lib/types";
 import { REASON_PRESETS } from "@/lib/types";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function SharePage() {
     const params = useParams();
@@ -94,7 +95,8 @@ export default function SharePage() {
             setResponses(responsesData);
         } catch (err) {
             console.error("読み込みエラー:", err);
-            setError("予定の読み込みに失敗しました。");
+            const errorMessage = getErrorMessage(err);
+            setError("予定の読み込みに失敗しました: " + errorMessage);
         } finally {
             setLoading(false);
         }
@@ -154,9 +156,8 @@ export default function SharePage() {
             alert("回答を保存しました");
         } catch (error) {
             console.error("回答保存エラー:", error);
-            const errorMessage =
-                error instanceof Error ? error.message : "回答の保存に失敗しました";
-            alert(errorMessage);
+            const errorMessage = getErrorMessage(error);
+            alert("回答の保存に失敗しました: " + errorMessage);
         } finally {
             setSaving(false);
         }

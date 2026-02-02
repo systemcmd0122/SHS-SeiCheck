@@ -69,6 +69,7 @@ import {
 import type { Event, Response, EventType, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { members } from "@/lib/members";
+import { clearAllSession, getErrorMessage } from "@/lib/utils";
 import {
     AttendanceChart,
     AttendanceRateChart,
@@ -182,13 +183,16 @@ export default function TeacherPage() {
             }
         } catch (error) {
             console.error("Failed to load data:", error);
+            const errorMessage = getErrorMessage(error);
+            alert("データの読み込みに失敗しました: " + errorMessage);
             setGoogleCalendarEvents([]);
         }
     };
 
     // ログアウト処理
     const handleLogout = () => {
-        sessionStorage.removeItem("teacherInfo");
+        // セッション情報を完全に削除
+        clearAllSession();
         router.push("/");
     };
 
@@ -228,7 +232,8 @@ export default function TeacherPage() {
             }
         } catch (error) {
             console.error("Error posting announcement:", error);
-            // エラーが発生してもローカルには表示されているので、UI上は成功した見た目
+            const errorMessage = getErrorMessage(error);
+            console.warn("お知らせの保存に失敗しました（ローカルには保存済み）: " + errorMessage);
         }
     };
 

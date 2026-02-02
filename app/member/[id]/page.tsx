@@ -4,6 +4,7 @@ import { useState, useEffect, JSX } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format, isPast, isFuture } from "date-fns";
 import { ja } from "date-fns/locale";
+import { clearAllSession, getErrorMessage } from "@/lib/utils";
 import {
   Calendar,
   Clock,
@@ -262,7 +263,9 @@ export default function MemberDashboard() {
   };
 
   const handleLogout = () => {
-    // キャッシュは保持し、ログイン画面に戻る
+    // セッション情報を完全に削除
+    clearAllSession();
+    // ログイン画面に戻る
     router.push("/");
   };
 

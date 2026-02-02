@@ -89,6 +89,7 @@ export function generateChartData(
     totalMembers: number
 ) {
     return events
+        .filter((event) => event.type !== "その他")
         .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
         .slice(-10) // 最新10件
         .map((event) => {

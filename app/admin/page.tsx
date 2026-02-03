@@ -101,6 +101,17 @@ import { successToast, errorToast } from "@/components/ui/toast-simple";
 import { clearAllSession, getErrorMessage } from "@/lib/utils";
 
 export default function AdminPage() {
+  const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+    if (!dateStr) return "---";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "---";
+      return format(date, formatStr, { locale: ja });
+    } catch (e) {
+      return "---";
+    }
+  };
+
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
@@ -448,8 +459,8 @@ export default function AdminPage() {
         const row: any = {
           予定名: event.title,
           種類: event.type,
-          日時: format(new Date(event.dateTime), "yyyy/MM/dd HH:mm", { locale: ja }),
-          締切: format(new Date(event.deadline), "yyyy/MM/dd HH:mm", { locale: ja }),
+          日時: safeFormat(event.dateTime, "yyyy/MM/dd HH:mm"),
+          締切: safeFormat(event.deadline, "yyyy/MM/dd HH:mm"),
           参加: summary.attended,
           不参加: summary.absent,
           遅れる: summary.undecided,
@@ -929,7 +940,7 @@ export default function AdminPage() {
                                       {announcement.content}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      {format(new Date(announcement.createdAt), "M月d日 HH:mm", { locale: ja })}
+                                      {safeFormat(announcement.createdAt, "M月d日 HH:mm")}
                                       {announcement.updatedAt && " (編集済み)"}
                                     </p>
                                   </div>
@@ -1001,8 +1012,13 @@ export default function AdminPage() {
             <EventCalendar
               events={events}
               highlightDates={events
-                .filter((e) => e.type !== "その他" && getUnansweredMembers(e.id).length > 0)
-                .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
+                .filter((e) => e.type !== "その他" && getUnansweredMembers(e.id).length > 0 && e.dateTime)
+                .map((e) => {
+                  const d = new Date(e.dateTime);
+                  return !isNaN(d.getTime()) ? format(d, "yyyy-MM-dd") : "";
+                })
+                .filter(Boolean)
+              }
               includeGoogleCalendar={true}
               googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
               onAddEvent={() => setIsAddEventDialogOpen(true)}
@@ -1087,10 +1103,10 @@ export default function AdminPage() {
                                     <CardDescription className="text-xs sm:text-sm">
                                       <div className="flex flex-col gap-1">
                                         <span>
-                                          開催: {format(new Date(event.dateTime), "M/d HH:mm", { locale: ja })}
+                                          開催: {safeFormat(event.dateTime, "M/d HH:mm")}
                                         </span>
                                         <span>
-                                          締切: {format(new Date(event.deadline), "M/d HH:mm", { locale: ja })}
+                                          締切: {safeFormat(event.deadline, "M/d HH:mm")}
                                         </span>
                                       </div>
                                     </CardDescription>
@@ -1359,7 +1375,7 @@ export default function AdminPage() {
                                             </Badge>
                                           </div>
                                           <p className="text-xs text-muted-foreground mb-2">
-                                            {format(new Date(event.dateTime), "M/d HH:mm")}
+                                            {safeFormat(event.dateTime, "M/d HH:mm")}
                                           </p>
                                           <div className="flex items-center justify-between">
                                             {getStatusBadge(status)}

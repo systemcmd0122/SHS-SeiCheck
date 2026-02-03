@@ -81,6 +81,17 @@ function getEventColor(title: string): string {
 }
 
 export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPageProps) {
+    const safeFormat = (date: Date | string | null | undefined, formatStr: string) => {
+        if (!date) return "---";
+        try {
+            const d = typeof date === "string" ? new Date(date) : date;
+            if (isNaN(d.getTime())) return "---";
+            return format(d, formatStr, { locale: ja });
+        } catch {
+            return "---";
+        }
+    };
+
     // ────────────────────────────────
     // DBイベントをGoogle Calendar形式に変換（時間は00:00:00に統一）
     // ────────────────────────────────
@@ -89,8 +100,8 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
         title: event.title,
         description: event.description || "",
         // 時間を00:00:00に統一してAIの精度を向上
-        startTime: event.dateTime.split('T')[0] + 'T00:00:00',
-        endTime: event.deadline.split('T')[0] + 'T23:59:00',
+        startTime: (event.dateTime || "").split('T')[0] + 'T00:00:00',
+        endTime: (event.deadline || "").split('T')[0] + 'T23:59:00',
         location: "",
     });
 
@@ -170,7 +181,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
             ];
             // 現在日時情報をAIに伝える
             const today = new Date();
-            const todayStr = format(today, "yyyy年M月d日", { locale: ja });
+            const todayStr = safeFormat(today, "yyyy年M月d日");
             const initialMsg = generateInitialMessage(combinedEvents) + `\n\n**本日は ${todayStr} です。**`;
             setMessages([
                 {
@@ -226,7 +237,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
         try {
             // 現在日時情報をコンテキストに含める
             const today = new Date();
-            const todayStr = format(today, "yyyy年M月d日", { locale: ja });
+            const todayStr = safeFormat(today, "yyyy年M月d日");
 
             const context: PlanningContext = {
                 events: [
@@ -306,7 +317,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
         setFormData({
             title: "",
             description: "",
-            date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+            date: selectedDate ? safeFormat(selectedDate, "yyyy-MM-dd") : "",
         });
         setShowAddEventDialog(true);
     };
@@ -316,7 +327,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
         setFormData({
             title: event.title,
             description: event.description || "",
-            date: format(new Date(event.dateTime), "yyyy-MM-dd"),
+            date: safeFormat(event.dateTime, "yyyy-MM-dd"),
         });
         setShowAddEventDialog(true);
     };
@@ -452,23 +463,29 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
 
     const getEventsForDate = (date: Date | null): GoogleCalendarEvent[] => {
         if (!date) return [];
-        const dStr = format(date, "yyyy-MM-dd");
-        return events.filter((e) => {
-            try {
-                if (!e.startTime) return false;
-                return format(new Date(e.startTime), "yyyy-MM-dd") === dStr;
-            } catch {
-                return false;
-            }
-        });
+        try {
+            const dStr = format(date, "yyyy-MM-dd");
+            return events.filter((e) => {
+                try {
+                    if (!e.startTime) return false;
+                    const startTime = new Date(e.startTime);
+                    if (isNaN(startTime.getTime())) return false;
+                    return format(startTime, "yyyy-MM-dd") === dStr;
+                } catch {
+                    return false;
+                }
+            });
+        } catch {
+            return [];
+        }
     };
 
     // 選択日のイベント
     const selectedDayEvents = selectedDate ? getEventsForDate(selectedDate) : [];
     const selectedDateDBEvents = selectedDate
         ? dbEvents.filter((e) => {
-            const eventDate = format(new Date(e.dateTime), "yyyy-MM-dd");
-            return eventDate === format(selectedDate, "yyyy-MM-dd");
+            const eventDate = safeFormat(e.dateTime, "yyyy-MM-dd");
+            return eventDate === safeFormat(selectedDate, "yyyy-MM-dd");
         })
         : [];
 
@@ -761,7 +778,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shrink-0">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {format(currentDate, "yyyy年M月", { locale: ja })}
+                            {safeFormat(currentDate, "yyyy年M月")}
                         </h2>
                         <div className="flex items-center gap-1">
                             <button
@@ -850,7 +867,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                                         {day && (
                                             <>
                                                 <span className="text-xs font-medium leading-none">
-                                                    {format(day, "d")}
+                                                    {safeFormat(day, "d")}
                                                 </span>
                                                 {/* イベント存在インディケーター */}
                                                 {hasEvents && (
@@ -882,7 +899,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 {selectedDate
-                                    ? format(selectedDate, "M月d日 (EEE)", { locale: ja })
+                                    ? safeFormat(selectedDate, "M月d日 (EEE)")
                                     : "日付を選択してください"}
                             </h3>
                             {selectedDate && (
@@ -982,9 +999,9 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                                                         if (isAllDay) return null;
                                                         return (
                                                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                                                {format(startDate, "HH:mm", { locale: ja })}
+                                                                {safeFormat(startDate, "HH:mm")}
                                                                 {event.endTime &&
-                                                                    ` – ${format(new Date(event.endTime), "HH:mm", { locale: ja })}`}
+                                                                    ` – ${safeFormat(event.endTime, "HH:mm")}`}
                                                             </p>
                                                         );
                                                     })()}
@@ -1022,7 +1039,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                             {editingEvent ? "予定を編集" : "予定を追加"}
                         </DialogTitle>
                         <DialogDescription>
-                            {selectedDate ? format(selectedDate, "yyyy年M月d日(E)", { locale: ja }) : "新しい予定を追加"}
+                            {selectedDate ? safeFormat(selectedDate, "yyyy年M月d日(E)") : "新しい予定を追加"}
                         </DialogDescription>
                     </DialogHeader>
 

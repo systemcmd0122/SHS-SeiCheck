@@ -102,15 +102,21 @@ export function EventCalendar({
 
     const getGoogleEventsForDate = (date: Date | null) => {
         if (!date) return [];
-        const dStr = format(date, "yyyy-MM-dd");
-        return googleEvents.filter((e) => {
-            try {
-                if (!e.startTime) return false;
-                return format(new Date(e.startTime), "yyyy-MM-dd") === dStr;
-            } catch {
-                return false;
-            }
-        });
+        try {
+            const dStr = format(date, "yyyy-MM-dd");
+            return googleEvents.filter((e) => {
+                try {
+                    if (!e.startTime) return false;
+                    const startTime = new Date(e.startTime);
+                    if (isNaN(startTime.getTime())) return false;
+                    return format(startTime, "yyyy-MM-dd") === dStr;
+                } catch {
+                    return false;
+                }
+            });
+        } catch {
+            return [];
+        }
     };
 
     const getEventTypeColor = (type: string) => {
@@ -125,28 +131,43 @@ export function EventCalendar({
 
     const getDBEventsForDate = (date: Date | null) => {
         if (!date) return [];
-        const dStr = format(date, "yyyy-MM-dd");
-        return events.filter((e) => {
-            try {
-                if (!e.dateTime) return false;
-                const eventDate = new Date(e.dateTime);
-                if (isNaN(eventDate.getTime())) return false;
-                return format(eventDate, "yyyy-MM-dd") === dStr;
-            } catch {
-                return false;
-            }
-        });
+        try {
+            const dStr = format(date, "yyyy-MM-dd");
+            return events.filter((e) => {
+                try {
+                    if (!e.dateTime) return false;
+                    const eventDate = new Date(e.dateTime);
+                    if (isNaN(eventDate.getTime())) return false;
+                    return format(eventDate, "yyyy-MM-dd") === dStr;
+                } catch {
+                    return false;
+                }
+            });
+        } catch {
+            return [];
+        }
     };
 
     const selectedDateDBEvents = selectedDate ? getDBEventsForDate(selectedDate) : [];
     const selectedDateGoogleEvents = selectedDate ? getGoogleEventsForDate(selectedDate) : [];
+
+    const safeFormat = (date: Date | string | null | undefined, formatStr: string) => {
+        if (!date) return "";
+        try {
+            const d = typeof date === "string" ? new Date(date) : date;
+            if (isNaN(d.getTime())) return "";
+            return format(d, formatStr, { locale: ja });
+        } catch {
+            return "";
+        }
+    };
 
     return (
         <>
             <Card className={`border-0 shadow-md ${compact ? "h-fit" : ""}`}>
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 pb-3 sm:pb-6">
                     <CardTitle className={`font-bold ${compact ? "text-lg" : "text-xl md:text-2xl"}`}>
-                        {format(currentDate, "yyyy年M月", { locale: ja })}
+                        {safeFormat(currentDate, "yyyy年M月")}
                     </CardTitle>
                     <div className="flex gap-2 items-center flex-shrink-0">
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
@@ -188,7 +209,7 @@ export function EventCalendar({
                             const dayGevs = getGoogleEventsForDate(day);
                             const dayDBevs = getDBEventsForDate(day);
                             const isToday = day ? isSameDay(day, new Date()) : false;
-                            const dateStr = day ? format(day, "yyyy-MM-dd") : "";
+                            const dateStr = day ? safeFormat(day, "yyyy-MM-dd") : "";
                             const isHighlighted = highlightDates.includes(dateStr);
                             const hasEvents = dayDBevs.length > 0 || dayGevs.length > 0;
 
@@ -202,7 +223,7 @@ export function EventCalendar({
                                 >
                                     {day && (
                                         <>
-                                            <div className={`text-xs sm:text-sm font-bold mb-0.5 flex-shrink-0 ${isToday ? "text-primary" : isHighlighted ? "text-amber-600" : ""}`}>{format(day, "d")}</div>
+                                            <div className={`text-xs sm:text-sm font-bold mb-0.5 flex-shrink-0 ${isToday ? "text-primary" : isHighlighted ? "text-amber-600" : ""}`}>{safeFormat(day, "d")}</div>
                                             <div className="space-y-0.5 text-[8px] sm:text-[9px]">
                                                 {(() => {
                                                     const allEvents = [...dayDBevs, ...dayGevs];
@@ -255,7 +276,7 @@ export function EventCalendar({
                 <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-4 sm:p-6">
                     <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-lg sm:text-xl">
-                            {selectedDate ? format(selectedDate, "yyyy年M月d日(E)", { locale: ja }) : ""}
+                            {safeFormat(selectedDate, "yyyy年M月d日(E)")}
                         </DialogTitle>
                         <DialogDescription className="text-sm sm:text-base">
                             この日付の予定一覧

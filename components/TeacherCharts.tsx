@@ -272,6 +272,17 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
     const total = statistics.attended + statistics.delayed + statistics.absent + statistics.unanswered;
     const responseCount = statistics.attended + statistics.delayed + statistics.absent;
 
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
     return (
         <Card className="w-full">
             <CardHeader>
@@ -279,7 +290,7 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
                     <div className="flex-1">
                         <CardTitle className="text-xl">{event.title}</CardTitle>
                         <CardDescription className="mt-2">
-                            {format(new Date(event.dateTime), "yyyy年MM月dd日 HH:mm", { locale: ja })}
+                            {safeFormat(event.dateTime, "yyyy年MM月dd日 HH:mm")}
                         </CardDescription>
                     </div>
                     <Badge variant="outline">{event.type}</Badge>
@@ -292,7 +303,7 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
                         <div className="space-y-2 text-sm">
                             <p>
                                 <span className="font-medium">回答期限:</span>{" "}
-                                {format(new Date(event.deadline), "yyyy年MM月dd日 HH:mm", { locale: ja })}
+                                {safeFormat(event.deadline, "yyyy年MM月dd日 HH:mm")}
                             </p>
                             <p>
                                 <span className="font-medium">作成者:</span> {event.createdBy}

@@ -111,6 +111,17 @@ interface MemberDetail {
 }
 
 export default function TeacherPage() {
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [teacherInfo, setTeacherInfo] = useState<TeacherInfo | null>(null);
@@ -329,10 +340,14 @@ export default function TeacherPage() {
                 googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
                 highlightDates={events
                     .filter((e) => {
+                        if (!e.dateTime) return false;
                         const eventDate = new Date(e.dateTime);
-                        return eventDate >= new Date();
+                        return !isNaN(eventDate.getTime()) && eventDate >= new Date();
                     })
-                    .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd", { locale: ja }))}
+                    .map((e) => {
+                        const d = new Date(e.dateTime);
+                        return format(d, "yyyy-MM-dd");
+                    })}
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -412,7 +427,7 @@ export default function TeacherPage() {
                                         <TableCell className="font-medium max-w-xs truncate">{stat.eventTitle}</TableCell>
                                         <TableCell><Badge variant="outline">{stat.eventType}</Badge></TableCell>
                                         <TableCell className="whitespace-nowrap">
-                                            {format(new Date(stat.eventDateTime), "yyyy年MM月dd日 HH:mm", { locale: ja })}
+                                            {safeFormat(stat.eventDateTime, "yyyy年MM月dd日 HH:mm")}
                                         </TableCell>
                                         <TableCell><span className="font-semibold text-green-600">{stat.attended}</span></TableCell>
                                         <TableCell><span className="font-semibold text-yellow-600">{stat.delayed}</span></TableCell>
@@ -495,11 +510,11 @@ export default function TeacherPage() {
                                             <TableCell className="font-medium max-w-xs truncate">{event.title}</TableCell>
                                             <TableCell><Badge variant="outline">{event.type}</Badge></TableCell>
                                             <TableCell className="whitespace-nowrap">
-                                                {format(new Date(event.dateTime), "MM/dd HH:mm", { locale: ja })}
+                                                {safeFormat(event.dateTime, "MM/dd HH:mm")}
                                             </TableCell>
                                             <TableCell className="whitespace-nowrap">
                                                 <span className={isOverdue ? "text-red-600 font-semibold" : ""}>
-                                                    {format(new Date(event.deadline), "MM/dd HH:mm", { locale: ja })}
+                                                    {safeFormat(event.deadline, "MM/dd HH:mm")}
                                                 </span>
                                             </TableCell>
                                             <TableCell>{event.createdBy}</TableCell>
@@ -809,7 +824,7 @@ export default function TeacherPage() {
                                         </div>
                                         <CardTitle>{announcement.title}</CardTitle>
                                         <CardDescription>
-                                            {format(new Date(announcement.createdAt), "yyyy年MM月dd日 HH:mm", { locale: ja })} by {announcement.createdBy}
+                                            {safeFormat(announcement.createdAt, "yyyy年MM月dd日 HH:mm")} by {announcement.createdBy}
                                         </CardDescription>
                                     </div>
                                 </div>

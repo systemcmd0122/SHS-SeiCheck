@@ -28,8 +28,19 @@ function generateShareToken(): string {
  * 共有メッセージを生成
  */
 function generateShareMessage(event: Event, shareUrl: string): string {
-    const eventDateTime = format(new Date(event.dateTime), "M月d日(E) HH:mm", { locale: ja });
-    const deadline = format(new Date(event.deadline), "M月d日 HH:mm", { locale: ja });
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
+    const eventDateTime = safeFormat(event.dateTime, "M月d日(E) HH:mm");
+    const deadline = safeFormat(event.deadline, "M月d日 HH:mm");
 
     return `【出欠回答のお願い】
 
@@ -227,7 +238,14 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
                                         {/* メタ情報 */}
                                         <div className="flex items-center justify-between">
                                             <div className="text-sm text-muted-foreground">
-                                                作成日: {format(new Date(share.createdAt), "yyyy年M月d日 HH:mm", { locale: ja })}
+                                                作成日: {(() => {
+                                                    try {
+                                                        const d = new Date(share.createdAt);
+                                                        return isNaN(d.getTime()) ? "---" : format(d, "yyyy年M月d日 HH:mm", { locale: ja });
+                                                    } catch {
+                                                        return "---";
+                                                    }
+                                                })()}
                                             </div>
                                             <Badge variant="outline">アクティブ</Badge>
                                         </div>

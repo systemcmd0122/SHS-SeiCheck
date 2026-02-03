@@ -33,6 +33,17 @@ interface UnansweredPanelProps {
 }
 
 export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
     const [unansweredMembers, setUnansweredMembers] = useState<Member[]>([]);
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareLink, setShareLink] = useState<string>("");
@@ -66,7 +77,8 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
 
             // メッセージに未回答者の苗字を組み込む
             const unansweredNames = unansweredMembers.map((m) => m.name.split(" ")[0]).join("さんと");
-            const defaultMessage = `【回答のお願い】\n\n${unansweredNames}さんがまだ未回答です！\n\n予定「${event.title}」への回答をお願いします。\n下記のリンクから簡単に回答できます：\n\n${shareLink}\n\n締切：${format(new Date(event.deadline), "yyyy年M月d日 HH:mm", { locale: ja })}`;
+            const deadlineStr = safeFormat(event.deadline, "yyyy年M月d日 HH:mm");
+            const defaultMessage = `【回答のお願い】\n\n${unansweredNames}さんがまだ未回答です！\n\n予定「${event.title}」への回答をお願いします。\n下記のリンクから簡単に回答できます：\n\n${shareLink}\n\n締切：${deadlineStr}`;
             setShareMessage(defaultMessage);
 
             // ダイアログを開く
@@ -254,7 +266,7 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                 {/* 締切情報 */}
                 <div className="text-xs text-muted-foreground">
                     <p>
-                        締切：{format(new Date(event.deadline), "yyyy年M月d日 HH:mm", { locale: ja })}
+                        締切：{safeFormat(event.deadline, "yyyy年M月d日 HH:mm")}
                     </p>
                     {isOverdue && (
                         <p className="text-red-600 dark:text-red-400 font-medium">

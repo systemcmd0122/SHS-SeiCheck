@@ -37,7 +37,13 @@ export function TodayEventsList({ events, onEventClick }: TodayEventsListProps) 
                     今日の予定
                 </CardTitle>
                 <CardDescription>
-                    {format(today, "yyyy年M月d日(E)", { locale: ja })}
+                    {(() => {
+                        try {
+                            return format(today, "yyyy年M月d日(E)", { locale: ja });
+                        } catch {
+                            return "今日";
+                        }
+                    })()}
                 </CardDescription>
             </CardHeader>
             <CardContent>

@@ -19,10 +19,24 @@ export function HistoryPanel({ events, responses, members, logs = [] }: HistoryP
     const [memberHistory, setMemberHistory] = useState<any[]>([]);
     const [sortedEvents, setSortedEvents] = useState<Event[]>([]);
 
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
     useEffect(() => {
         // 過去の予定を降順でソート
         const past = events
-            .filter((e) => new Date(e.dateTime) < new Date())
+            .filter((e) => {
+                const date = new Date(e.dateTime);
+                return !isNaN(date.getTime()) && date < new Date();
+            })
             .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
 
         setSortedEvents(past);
@@ -125,7 +139,7 @@ export function HistoryPanel({ events, responses, members, logs = [] }: HistoryP
                                             <div>
                                                 <h3 className="font-medium">{event.title}</h3>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {format(new Date(event.dateTime), "yyyy年M月d日 HH:mm", { locale: ja })}
+                                                    {safeFormat(event.dateTime, "yyyy年M月d日 HH:mm")}
                                                 </p>
                                             </div>
                                             <Badge variant="outline">{event.type}</Badge>
@@ -165,7 +179,7 @@ export function HistoryPanel({ events, responses, members, logs = [] }: HistoryP
                                             {members.find((m) => m.id === log.memberId)?.name || "不明"}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {format(new Date(log.changedAt), "yyyy-MM-dd HH:mm", { locale: ja })}
+                                            {safeFormat(log.changedAt, "yyyy-MM-dd HH:mm")}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">

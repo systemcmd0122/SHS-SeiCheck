@@ -49,6 +49,17 @@ import { REASON_PRESETS } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function SharePage() {
+    const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+        if (!dateStr) return "---";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "---";
+            return format(date, formatStr, { locale: ja });
+        } catch (e) {
+            return "---";
+        }
+    };
+
     const params = useParams();
     const router = useRouter();
     const token = params.token as string;
@@ -291,15 +302,13 @@ export default function SharePage() {
                                     <div className="flex items-center gap-2 text-xs sm:text-sm">
                                         <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                                         <span className="truncate">
-                                            開催: {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
-                                                locale: ja,
-                                            })}
+                                            開催: {safeFormat(event.dateTime, "M月d日(E) HH:mm")}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-xs sm:text-sm">
                                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                                         <span className="truncate">
-                                            締切: {format(new Date(event.deadline), "M月d日 HH:mm", { locale: ja })}
+                                            締切: {safeFormat(event.deadline, "M月d日 HH:mm")}
                                         </span>
                                     </div>
                                 </CardDescription>

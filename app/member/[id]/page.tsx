@@ -44,6 +44,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingScreen } from "@/components/Loading";
 import { EventCalendar } from "@/components/EventCalendar";
 import { members } from "@/lib/members";
+import { successToast, errorToast } from "@/components/ui/toast-simple";
 import {
   getAllEvents,
   getAllResponses,
@@ -146,7 +147,7 @@ export default function MemberDashboard() {
 
     // 参加以外で理由が空の場合はエラー
     if ((selectedStatus === "遅れる" || selectedStatus === "不参加") && !reason.trim()) {
-      alert("理由を入力してください");
+      errorToast("入力エラー", "理由を入力してください");
       return;
     }
 
@@ -172,12 +173,12 @@ export default function MemberDashboard() {
       setDialogOpen(false);
       setSelectedEvent(null);
       setReason("");
-      alert("回答を保存しました");
+      successToast("回答完了", "回答を保存しました");
     } catch (error) {
       console.error("✗ 回答保存エラー:", error);
       const errorMessage =
         error instanceof Error ? error.message : "回答の保存に失敗しました";
-      alert(errorMessage);
+      errorToast("保存失敗", errorMessage);
     } finally {
       setSaving(false);
     }
@@ -280,6 +281,23 @@ export default function MemberDashboard() {
   const upcomingEvents = getUpcomingEvents();
   const stats = getMyStats();
 
+  // 未回答かつ期限が近い、または開催が近い予定
+  const urgentEvents = events
+    .filter((e) => !getMyResponse(e.id) && !isDeadlinePassed(e))
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+    .slice(0, 2);
+
+  // 最近の活動（最新5件の回答）
+  const recentActivities = responses
+    .filter((r) => r.memberId === memberId)
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 5)
+    .map(r => ({
+        ...r,
+        event: events.find(e => e.id === r.eventId)
+    }))
+    .filter(a => a.event);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* ヘッダー */}
@@ -306,6 +324,37 @@ export default function MemberDashboard() {
       </header>
 
       <div className="container mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 max-w-4xl">
+        {/* 緊急のアクションが必要な予定 */}
+        {urgentEvents.length > 0 && (
+          <Card className="border-2 border-amber-500 shadow-lg animate-pulse-subtle bg-amber-50/50 dark:bg-amber-950/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="w-5 h-5" />
+                回答が必要です
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {urgentEvents.map((event) => (
+                <div
+                  key={event.id}
+                  onClick={() => handleEventClick(event)}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 cursor-pointer hover:shadow-md transition-shadow"
+                >
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-sm sm:text-base truncate">{event.title}</h4>
+                    <p className="text-xs text-muted-foreground">
+                      締切: {format(new Date(event.deadline), "M/d HH:mm")}
+                    </p>
+                  </div>
+                  <Button size="sm" className="ml-4 shrink-0 bg-amber-600 hover:bg-amber-700 text-white">
+                    回答する
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* お知らせセクション */}
         {announcements.length > 0 && (
           <Card className="border-0 shadow-md">
@@ -516,6 +565,35 @@ export default function MemberDashboard() {
                   </div>
                 );
               })}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 最近の活動 */}
+        {recentActivities.length > 0 && (
+          <Card className="border-0 shadow-md">
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                あなたの最近の回答
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivities.map((activity, idx) => (
+                  <div key={`${activity.eventId}-${idx}`} className="flex items-start gap-3">
+                    <div className="mt-1">
+                        {getStatusBadge(activity.status)}
+                    </div>
+                    <div className="flex-1 min-w-0 text-sm">
+                      <p className="font-medium truncate">{activity.event?.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(activity.updatedAt), "M/d HH:mm")} に回答
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}

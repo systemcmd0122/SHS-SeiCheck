@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SwRegister } from "./sw-register";
 import { CacheClearer } from "./cache-clearer";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { Toaster } from "@/components/ui/toast-simple";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -104,6 +105,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster />
           <SwRegister />
           <CacheClearer />
           <OfflineIndicator />

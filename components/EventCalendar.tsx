@@ -113,6 +113,16 @@ export function EventCalendar({
         });
     };
 
+    const getEventTypeColor = (type: string) => {
+        switch (type) {
+            case "定例会": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-400 dark:border-green-800/60";
+            case "行事準備": return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800/60";
+            case "本番": return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-400 dark:border-purple-800/60";
+            case "臨時集会": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800/60";
+            default: return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+        }
+    };
+
     const getDBEventsForDate = (date: Date | null) => {
         if (!date) return [];
         const dStr = format(date, "yyyy-MM-dd");
@@ -153,14 +163,14 @@ export function EventCalendar({
                             </Link>
                         )}
                         {onAddEvent && (
-                            <Button variant="ghost" size="icon" onClick={onAddEvent} className="text-primary hover:bg-primary/10">
+                            <Button variant="ghost" size="icon" onClick={onAddEvent} className="text-primary hover:bg-primary/10" aria-label="予定を追加">
                                 <Plus className="w-5 h-5" />
                             </Button>
                         )}
-                        <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}>
+                        <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))} aria-label="前月">
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}>
+                        <Button variant="outline" size="icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))} aria-label="次月">
                             <ChevronRight className="w-4 h-4" />
                         </Button>
                     </div>
@@ -204,8 +214,8 @@ export function EventCalendar({
                                                             {dayDBevs.slice(0, 3).map((de) => (
                                                                 <div
                                                                     key={de.id}
-                                                                    className="bg-green-100 text-green-700 border border-green-200 rounded px-1 py-0.5 truncate hover:bg-green-200 font-medium cursor-pointer text-[7px] sm:text-[8px] dark:bg-green-900/40 dark:text-green-400 dark:border-green-800/60 dark:hover:bg-green-900/60"
-                                                                    title={de.title}
+                                                                    className={`${getEventTypeColor(de.type)} border rounded px-1 py-0.5 truncate hover:opacity-80 font-medium cursor-pointer text-[7px] sm:text-[8px] transition-opacity`}
+                                                                    title={`${de.type}: ${de.title}${de.description ? '\n' + de.description : ''}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         onEventClick?.(de);

@@ -70,6 +70,7 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ResponseStatus>("参加");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -123,11 +124,18 @@ export default function MemberDashboard() {
   }, [member, router]);
 
   const handleEventClick = async (event: Event) => {
-    if (isDeadlinePassed(event)) {
-      return;
+    setSelectedEvent(event);
+
+    // 出欠確認が不要な場合は詳細ダイアログを表示
+    if (event.isAttendanceRequired === false) {
+        setInfoDialogOpen(true);
+        return;
     }
 
-    setSelectedEvent(event);
+    if (isDeadlinePassed(event)) {
+      setInfoDialogOpen(true);
+      return;
+    }
 
     // 既存の回答を取得
     const existingResponse = await getResponse(event.id, memberId);
@@ -241,22 +249,33 @@ export default function MemberDashboard() {
 
   const getUpcomingEvents = () => {
     return events
-      .filter((e) => isFuture(new Date(e.dateTime)))
+      .filter((e) => e.isAttendanceRequired !== false && isFuture(new Date(e.dateTime)))
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime())
       .slice(0, 3);
   };
 
   const getMyStats = () => {
     const myResponses = responses.filter((r) => r.memberId === memberId);
+    const attendanceEvents = events.filter(e => e.isAttendanceRequired !== false);
+
     return {
-      participated: myResponses.filter((r) => r.status === "参加").length,
-      late: myResponses.filter((r) => r.status === "遅れる").length,
-      absent: myResponses.filter((r) => r.status === "不参加").length,
-      unanswered: events.filter((e) => {
+      participated: myResponses.filter((r) => {
+          const ev = attendanceEvents.find(e => e.id === r.eventId);
+          return ev && r.status === "参加";
+      }).length,
+      late: myResponses.filter((r) => {
+          const ev = attendanceEvents.find(e => e.id === r.eventId);
+          return ev && r.status === "遅れる";
+      }).length,
+      absent: myResponses.filter((r) => {
+          const ev = attendanceEvents.find(e => e.id === r.eventId);
+          return ev && r.status === "不参加";
+      }).length,
+      unanswered: attendanceEvents.filter((e) => {
         const response = getMyResponse(e.id);
         return !response;
       }).length,
-      overdueUnanswered: events.filter((e) => {
+      overdueUnanswered: attendanceEvents.filter((e) => {
         const response = getMyResponse(e.id);
         return !response && isDeadlinePassed(e);
       }).length,
@@ -283,7 +302,7 @@ export default function MemberDashboard() {
 
   // 未回答かつ期限が近い、または開催が近い予定
   const urgentEvents = events
-    .filter((e) => !getMyResponse(e.id) && !isDeadlinePassed(e))
+    .filter((e) => e.isAttendanceRequired !== false && !getMyResponse(e.id) && !isDeadlinePassed(e))
     .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
     .slice(0, 2);
 
@@ -296,7 +315,7 @@ export default function MemberDashboard() {
         ...r,
         event: events.find(e => e.id === r.eventId)
     }))
-    .filter(a => a.event);
+    .filter(a => a.event && a.event.isAttendanceRequired !== false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
@@ -603,20 +622,20 @@ export default function MemberDashboard() {
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              予定一覧
+              出欠確認が必要な予定
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               予定をタップして出欠を回答してください
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-3">
-            {events.length === 0 ? (
+            {events.filter(e => e.isAttendanceRequired !== false).length === 0 ? (
               <div className="py-8 sm:py-12 text-center">
                 <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
                 <p className="text-xs sm:text-sm text-muted-foreground">予定がありません</p>
               </div>
             ) : (
-              events.map((event) => {
+              events.filter(e => e.isAttendanceRequired !== false).map((event) => {
                 const response = getMyResponse(event.id);
                 const status: ResponseStatus = response?.status || "未回答";
                 const deadlinePassed = isDeadlinePassed(event);
@@ -786,6 +805,62 @@ export default function MemberDashboard() {
               disabled={saving}
             >
               {saving ? "保存中..." : "回答を保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 予定詳細ダイアログ (出欠不要または期限切れ用) */}
+      <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-lg p-4 sm:p-6 flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl line-clamp-2">
+              {selectedEvent?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              {selectedEvent &&
+                format(new Date(selectedEvent.dateTime), "M月d日(E) HH:mm", {
+                  locale: ja,
+                })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+            <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{selectedEvent?.type}</Badge>
+                {selectedEvent?.isAttendanceRequired === false && (
+                    <Badge variant="secondary">出欠確認不要</Badge>
+                )}
+                {selectedEvent && isDeadlinePassed(selectedEvent) && (
+                    <Badge className="bg-orange-500">期限終了</Badge>
+                )}
+            </div>
+
+            {selectedEvent?.description && (
+                <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-wrap">
+                        {selectedEvent.description}
+                    </p>
+                </div>
+            )}
+
+            {selectedEvent?.isAttendanceRequired !== false && (
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+                    <p className="text-xs text-blue-800 dark:text-blue-200">
+                        この予定は出欠確認対象です。
+                        {isDeadlinePassed(selectedEvent!) ? "回答期限が過ぎているため、閲覧のみ可能です。" : ""}
+                    </p>
+                </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-4 border-t flex-shrink-0">
+            <Button
+              onClick={() => setInfoDialogOpen(false)}
+              className="w-full sm:w-auto"
+              size="sm"
+            >
+              閉じる
             </Button>
           </DialogFooter>
         </DialogContent>

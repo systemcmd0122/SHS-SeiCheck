@@ -215,13 +215,13 @@ export function EventCalendar({
                                                                 <div
                                                                     key={de.id}
                                                                     className={`${getEventTypeColor(de.type)} border rounded px-1 py-0.5 truncate hover:opacity-80 font-medium cursor-pointer text-[7px] sm:text-[8px] transition-opacity`}
-                                                                    title={`${de.type}: ${de.title}${de.description ? '\n' + de.description : ''}`}
+                                                                    title={`${de.isAttendanceRequired !== false ? '[出欠確認] ' : ''}${de.type}: ${de.title}${de.description ? '\n' + de.description : ''}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         onEventClick?.(de);
                                                                     }}
                                                                 >
-                                                                    ✓ {de.title}
+                                                                    {de.isAttendanceRequired !== false ? '✓ ' : '• '} {de.title}
                                                                 </div>
                                                             ))}
                                                             {dayDBevs.length < 3 && dayGevs.slice(0, 3 - dayDBevs.length).map((ge) => (
@@ -263,9 +263,9 @@ export function EventCalendar({
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
-                        {/* 出欠確認予定（その他以外） */}
+                        {/* 出欠確認予定（その他以外、または isAttendanceRequired === true） */}
                         {(() => {
-                            const attendanceEvents = selectedDateDBEvents.filter(e => e.type !== "その他");
+                            const attendanceEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired !== false);
                             return attendanceEvents.length > 0 ? (
                                 <div>
                                     <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
@@ -287,9 +287,11 @@ export function EventCalendar({
                                                         }}
                                                     >
                                                         <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
-                                                        <Badge variant="outline" className="mt-2 text-xs">
-                                                            {event.type}
-                                                        </Badge>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {event.type}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
@@ -302,9 +304,9 @@ export function EventCalendar({
                             ) : null;
                         })()}
 
-                        {/* カレンダーから追加した予定（その他） */}
+                        {/* カレンダーのみの予定（isAttendanceRequired === false） */}
                         {(() => {
-                            const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他");
+                            const calendarEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired === false);
                             return calendarEvents.length > 0 ? (
                                 <div>
                                     <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
@@ -315,7 +317,7 @@ export function EventCalendar({
                                         {calendarEvents.map((event) => (
                                             <div
                                                 key={event.id}
-                                                className={`p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20 ${onEventClick ? 'hover:bg-blue-100 cursor-pointer transition-colors dark:hover:bg-blue-900/40' : ''}`}
+                                                className={`p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20 ${onEventClick ? 'hover:bg-blue-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
                                             >
                                                 <div className="flex items-start justify-between gap-2 sm:gap-3">
                                                     <div
@@ -326,9 +328,14 @@ export function EventCalendar({
                                                         }}
                                                     >
                                                         <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
-                                                        <Badge variant="outline" className="mt-2 text-xs">
-                                                            {event.type}
-                                                        </Badge>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {event.type}
+                                                            </Badge>
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                出欠不要
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
@@ -389,7 +396,7 @@ export function EventCalendar({
 
                     <div className="flex justify-between gap-2 pt-4 border-t flex-shrink-0">
                         {(selectedDateGoogleEvents.length > 0 || (() => {
-                            const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他");
+                            const calendarEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired === false);
                             return calendarEvents.length > 0;
                         })()) && (
                                 <Button
@@ -398,7 +405,7 @@ export function EventCalendar({
                                     className="flex items-center gap-2"
                                     onClick={() => {
                                         // Google CalendarイベントとカレンダーDB予定を変換して共有
-                                        const calendarEvents = selectedDateDBEvents.filter(e => e.type === "その他").map(event => ({
+                                        const calendarEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired === false).map(event => ({
                                             id: event.id,
                                             title: event.title,
                                             description: event.description || "",

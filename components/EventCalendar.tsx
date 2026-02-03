@@ -216,15 +216,27 @@ export function EventCalendar({
                             return (
                                 <div
                                     key={`${wi}-${di}`}
-                                    className={`h-[110px] w-full p-1 sm:p-1.5 rounded-lg border transition-all overflow-hidden flex flex-col ${!day ? "bg-muted/10 opacity-50" : isHighlighted ? "border-amber-400 bg-amber-50 shadow-md hover:shadow-lg dark:border-amber-700 dark:bg-amber-900/30" : isToday ? "border-primary bg-primary/5 shadow-inner dark:bg-primary/10" : "border-muted bg-card hover:border-primary/40 dark:bg-slate-800/50"} ${(hasEvents || day) ? "cursor-pointer" : ""}`}
+                                    className={`h-[80px] sm:h-[110px] w-full p-1 sm:p-1.5 rounded-xl border transition-all overflow-hidden flex flex-col group ${!day ? "bg-muted/5 opacity-30" : isHighlighted ? "border-amber-400 bg-amber-50 shadow-md hover:shadow-lg dark:border-amber-700 dark:bg-amber-900/30" : isToday ? "border-primary bg-primary/5 shadow-inner dark:bg-primary/10" : "border-muted bg-card hover:border-primary/40 dark:bg-slate-800/50"} ${(hasEvents || day) ? "cursor-pointer active:scale-95" : ""}`}
                                     onClick={() => {
                                         if (day) setSelectedDate(day);
                                     }}
                                 >
                                     {day && (
                                         <>
-                                            <div className={`text-xs sm:text-sm font-bold mb-0.5 flex-shrink-0 ${isToday ? "text-primary" : isHighlighted ? "text-amber-600" : ""}`}>{safeFormat(day, "d")}</div>
-                                            <div className="space-y-0.5 text-[8px] sm:text-[9px]">
+                                            <div className={`text-[10px] sm:text-xs font-black mb-1 flex-shrink-0 ${isToday ? "text-primary underline underline-offset-2" : isHighlighted ? "text-amber-600" : "text-muted-foreground"}`}>{safeFormat(day, "d")}</div>
+
+                                            {/* モバイル用ドット表示 (sm以下) */}
+                                            <div className="flex flex-wrap gap-0.5 mt-auto sm:hidden">
+                                                {dayDBevs.map((de) => (
+                                                    <div key={de.id} className={`w-1.5 h-1.5 rounded-full ${de.isAttendanceRequired !== false ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                                                ))}
+                                                {dayGevs.map((ge) => (
+                                                    <div key={ge.id} className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                                ))}
+                                            </div>
+
+                                            {/* デスクトップ用テキスト表示 (sm以上) */}
+                                            <div className="hidden sm:block space-y-0.5 text-[9px]">
                                                 {(() => {
                                                     const allEvents = [...dayDBevs, ...dayGevs];
                                                     const displayedCount = Math.min(3, allEvents.length);
@@ -235,28 +247,29 @@ export function EventCalendar({
                                                             {dayDBevs.slice(0, 3).map((de) => (
                                                                 <div
                                                                     key={de.id}
-                                                                    className={`${getEventTypeColor(de.type)} border rounded px-1 py-0.5 truncate hover:opacity-80 font-medium cursor-pointer text-[7px] sm:text-[8px] transition-opacity`}
+                                                                    className={`${getEventTypeColor(de.type)} border rounded px-1 py-0.5 truncate hover:opacity-80 font-bold cursor-pointer transition-opacity flex items-center gap-1 shadow-sm`}
                                                                     title={`${de.isAttendanceRequired !== false ? '[出欠確認] ' : ''}${de.type}: ${de.title}${de.description ? '\n' + de.description : ''}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         onEventClick?.(de);
                                                                     }}
                                                                 >
-                                                                    {de.isAttendanceRequired !== false ? '✓ ' : '• '} {de.title}
+                                                                    <span className="shrink-0">{de.isAttendanceRequired !== false ? '✓' : '•'}</span>
+                                                                    <span className="truncate">{de.title}</span>
                                                                 </div>
                                                             ))}
                                                             {dayDBevs.length < 3 && dayGevs.slice(0, 3 - dayDBevs.length).map((ge) => (
                                                                 <div
                                                                     key={ge.id}
-                                                                    className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-1 py-0.5 truncate font-medium text-[7px] sm:text-[8px] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800/60"
+                                                                    className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-1 py-0.5 truncate font-bold text-[8px] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800/60 shadow-sm"
                                                                     title={ge.title}
                                                                 >
                                                                     📅 {ge.title}
                                                                 </div>
                                                             ))}
                                                             {remainingCount > 0 && (
-                                                                <div className="text-[7px] sm:text-[8px] text-muted-foreground text-center font-medium">
-                                                                    ...+{remainingCount}
+                                                                <div className="text-[8px] font-black text-muted-foreground/60 text-center uppercase tracking-tighter pt-1">
+                                                                    他 {remainingCount} 件
                                                                 </div>
                                                             )}
                                                         </>
@@ -273,50 +286,48 @@ export function EventCalendar({
             </Card>
             {/* 日付詳細ダイアログ */}
             <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
-                <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-4 sm:p-6">
-                    <DialogHeader className="flex-shrink-0">
-                        <DialogTitle className="text-lg sm:text-xl">
-                            {safeFormat(selectedDate, "yyyy年M月d日(E)")}
+                <DialogContent className="w-[92vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-3xl border-none shadow-2xl">
+                    <DialogHeader className="flex-shrink-0 space-y-1">
+                        <DialogTitle className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary uppercase">
+                            {safeFormat(selectedDate, "M月d日 (E)")}
                         </DialogTitle>
-                        <DialogDescription className="text-sm sm:text-base">
-                            この日付の予定一覧
+                        <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                            この日の予定
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
+                    <div className="flex-1 overflow-y-auto space-y-8 py-6 pr-2">
                         {/* 出欠確認予定（その他以外、または isAttendanceRequired === true） */}
                         {(() => {
                             const attendanceEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired !== false);
                             return attendanceEvents.length > 0 ? (
-                                <div>
-                                    <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-green-700 dark:text-green-400">
-                                        <div className="w-3 h-3 rounded-full bg-green-500 dark:bg-green-600 flex-shrink-0"></div>
-                                        <span>出欠確認予定 ({attendanceEvents.length}件)</span>
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        出欠確認 ({attendanceEvents.length})
                                     </h3>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {attendanceEvents.map((event) => (
                                             <div
                                                 key={event.id}
-                                                className={`p-3 sm:p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-900/20 ${onEventClick ? 'hover:bg-green-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
+                                                className={`group p-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 dark:border-emerald-900/30 dark:bg-emerald-950/20 ${onEventClick ? 'hover:shadow-lg hover:bg-emerald-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-emerald-900/40' : ''}`}
+                                                onClick={() => {
+                                                    onEventClick?.(event);
+                                                    setSelectedDate(null);
+                                                }}
                                             >
-                                                <div className="flex items-start justify-between gap-2 sm:gap-3">
-                                                    <div
-                                                        className="flex-1 min-w-0"
-                                                        onClick={() => {
-                                                            onEventClick?.(event);
-                                                            setSelectedDate(null);
-                                                        }}
-                                                    >
-                                                        <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
-                                                        <div className="flex gap-2 mt-2">
-                                                            <Badge variant="outline" className="text-xs">
+                                                <div className="flex items-center justify-between gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-black text-sm sm:text-lg break-words group-hover:text-emerald-700 transition-colors">{event.title}</h4>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest bg-white/50 dark:bg-black/20">
                                                                 {event.type}
                                                             </Badge>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
-                                                    </div>
+                                                    {onEventClick && <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                                                        <ChevronRight className="w-5 h-5" />
+                                                    </div>}
                                                 </div>
                                             </div>
                                         ))}
@@ -329,49 +340,49 @@ export function EventCalendar({
                         {(() => {
                             const calendarEvents = selectedDateDBEvents.filter(e => e.isAttendanceRequired === false);
                             return calendarEvents.length > 0 ? (
-                                <div>
-                                    <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                                        <div className="w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-600 flex-shrink-0"></div>
-                                        <span>カレンダー予定 ({calendarEvents.length}件)</span>
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                        その他の予定 ({calendarEvents.length})
                                     </h3>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {calendarEvents.map((event) => (
                                             <div
                                                 key={event.id}
-                                                className={`p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20 ${onEventClick ? 'hover:bg-blue-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
+                                                className={`group p-4 rounded-2xl border border-blue-100 bg-blue-50/30 dark:border-blue-900/30 dark:bg-blue-950/20 ${onEventClick ? 'hover:shadow-lg hover:bg-blue-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-blue-900/40' : ''}`}
+                                                onClick={() => {
+                                                    onEventClick?.(event);
+                                                    setSelectedDate(null);
+                                                }}
                                             >
-                                                <div className="flex items-start justify-between gap-2 sm:gap-3">
-                                                    <div
-                                                        className="flex-1 min-w-0"
-                                                        onClick={() => {
-                                                            onEventClick?.(event);
-                                                            setSelectedDate(null);
-                                                        }}
-                                                    >
-                                                        <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
-                                                        <div className="flex gap-2 mt-2">
-                                                            <Badge variant="outline" className="text-xs">
+                                                <div className="flex items-center justify-between gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-black text-sm sm:text-lg break-words group-hover:text-blue-700 transition-colors">{event.title}</h4>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest bg-white/50 dark:bg-black/20">
                                                                 {event.type}
                                                             </Badge>
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                出欠不要
+                                                            <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                                                                表示のみ
                                                             </Badge>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 shrink-0">
-                                                        {onEventClick && <span className="text-lg sm:text-xl flex-shrink-0">→</span>}
                                                         {onDeleteEvent && (
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     onDeleteEvent(event.id);
                                                                 }}
-                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 p-2 rounded transition-colors"
+                                                                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-2 rounded-full transition-all"
                                                                 title="削除"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
                                                         )}
+                                                        {onEventClick && <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                                            <ChevronRight className="w-5 h-5" />
+                                                        </div>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -383,20 +394,20 @@ export function EventCalendar({
 
                         {/* Google Calendar予定 */}
                         {selectedDateGoogleEvents.length > 0 && (
-                            <div>
-                                <h3 className="font-semibold text-sm sm:text-base mb-3 flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                                    <div className="w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-600 flex-shrink-0"></div>
-                                    <span>Google Calendar ({selectedDateGoogleEvents.length}件)</span>
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                    Google Calendar ({selectedDateGoogleEvents.length})
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {selectedDateGoogleEvents.map((event) => (
                                         <div
                                             key={event.id}
-                                            className="p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800/60 dark:bg-blue-900/20"
+                                            className="p-4 rounded-2xl border border-muted bg-muted/20"
                                         >
-                                            <h4 className="font-medium text-sm sm:text-base break-words">{event.title}</h4>
+                                            <h4 className="font-bold text-sm sm:text-base break-words">{event.title}</h4>
                                             {event.description && (
-                                                <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
+                                                <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic font-medium">
                                                     {event.description}
                                                 </p>
                                             )}

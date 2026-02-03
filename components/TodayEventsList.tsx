@@ -4,7 +4,7 @@ import { format, isSameDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 
 interface TodayEventsListProps {
     events: any[];
@@ -30,39 +30,44 @@ export function TodayEventsList({ events, onEventClick }: TodayEventsListProps) 
     });
 
     return (
-        <Card className="border-0 shadow-md">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
+        <Card className="border-none shadow-xl bg-card/50 backdrop-blur-md overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Calendar className="w-24 h-24" />
+            </div>
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-primary font-black italic uppercase tracking-tighter">
+                    <Calendar className="w-5 h-5" />
                     今日の予定
                 </CardTitle>
-                <CardDescription>
-                    {format(today, "yyyy年M月d日(E)", { locale: ja })}
+                <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                    {format(today, "yyyy.MM.dd (EEE)", { locale: ja })}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {todayEvents.length === 0 ? (
-                    <div className="py-8 text-center">
-                        <p className="text-muted-foreground">今日の予定はありません</p>
+                    <div className="py-10 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
+                        <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">今日の予定はありません</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {todayEvents.map((event) => (
                             <div
                                 key={event.id}
-                                className={`p-4 rounded-lg border border-green-200 bg-green-50 dark:border-green-800/60 dark:bg-green-900/20 ${onEventClick ? 'hover:bg-green-100 cursor-pointer transition-colors dark:hover:bg-green-900/40' : ''}`}
+                                className={`group p-4 rounded-2xl border border-primary/10 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm shadow-sm transition-all ${onEventClick ? 'hover:shadow-lg hover:bg-white dark:hover:bg-gray-900 cursor-pointer active:scale-[0.98]' : ''}`}
                                 onClick={() => onEventClick?.(event)}
                             >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-base mb-2">
+                                        <h3 className="font-black text-sm sm:text-base mb-2 group-hover:text-primary transition-colors">
                                             {event.title}
                                         </h3>
-                                        <Badge variant="outline" className="text-xs">
+                                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest bg-white/50 dark:bg-black/20">
                                             {event.type}
                                         </Badge>
                                     </div>
-                                    {onEventClick && <span className="text-xl text-green-600 dark:text-green-400 flex-shrink-0">→</span>}
+                                    {onEventClick && <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:translate-x-1 transition-transform">
+                                        <ChevronRight className="w-5 h-5" />
+                                    </div>}
                                 </div>
                             </div>
                         ))}

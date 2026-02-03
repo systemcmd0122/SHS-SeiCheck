@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SwRegister } from "./sw-register";
 import { CacheClearer } from "./cache-clearer";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { Toaster } from "@/components/ui/toast-simple";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -104,16 +105,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster />
           <SwRegister />
           <CacheClearer />
           <OfflineIndicator />
         </ThemeProvider>
 
-        {/* 遅延読み込みスクリプト */}
-        <Script
-          src="https://cdn.jsdelivr.net/npm/pwa-asset-generator@6.2.0/dist/pwa-asset-generator.js"
-          strategy="lazyOnload"
-        />
       </body>
     </html>
   );

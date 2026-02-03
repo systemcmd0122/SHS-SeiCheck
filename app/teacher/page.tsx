@@ -69,6 +69,7 @@ import {
 import type { Event, Response, EventType, Announcement, AnnouncementPriority } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { members } from "@/lib/members";
+import { successToast, errorToast } from "@/components/ui/toast-simple";
 import { clearAllSession, getErrorMessage } from "@/lib/utils";
 import {
     AttendanceChart,
@@ -155,10 +156,10 @@ export default function TeacherPage() {
     // すべてのデータを読み込む
     const loadAllData = async () => {
         try {
-            const [eventsData, responsesData, announcementsData, googleEventsResponse] = await Promise.all([
+            const [eventsData, responsesData, announcementsResponse, googleEventsResponse] = await Promise.all([
                 getAllEvents(),
                 getAllResponses(),
-                getAllAnnouncements(),
+                fetch("/api/announcements").then((res) => res.json()).catch(() => ({ success: false })),
                 fetch("/api/google-calendar/events").then((res) => res.json()).catch((err) => {
                     console.error("Failed to fetch Google Calendar events:", err);
                     return { success: false, data: [] };
@@ -167,7 +168,10 @@ export default function TeacherPage() {
 
             setEvents(eventsData.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
             setResponses(responsesData);
-            setAnnouncements(announcementsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            
+            if (announcementsResponse && announcementsResponse.success) {
+                setAnnouncements((announcementsResponse.data as Announcement[]).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
 
             // Googleカレンダーイベントの処理
             if (googleEventsResponse && googleEventsResponse.success && Array.isArray(googleEventsResponse.data)) {
@@ -184,7 +188,7 @@ export default function TeacherPage() {
         } catch (error) {
             console.error("Failed to load data:", error);
             const errorMessage = getErrorMessage(error);
-            alert("データの読み込みに失敗しました: " + errorMessage);
+            errorToast("読込失敗", errorMessage);
             setGoogleCalendarEvents([]);
         }
     };
@@ -199,41 +203,44 @@ export default function TeacherPage() {
     // お知らせ投稿処理
     const handlePostAnnouncement = async () => {
         if (!announcementTitle.trim() || !announcementContent.trim() || !teacherInfo) {
-            alert("タイトルと内容を入力してください");
+            errorToast("入力エラー", "タイトルと内容を入力してください");
             return;
         }
 
-        const newAnnouncement: Announcement = {
-            id: `announcement_${Date.now()}`,
-            title: announcementTitle.trim(),
-            content: announcementContent.trim(),
-            priority: announcementPriority,
-            createdAt: new Date().toISOString(),
-            createdBy: teacherInfo.name,
-            isTeacher: true,
-        };
-
-        // ローカルで表示を更新
-        setAnnouncements([newAnnouncement, ...announcements]);
-        setAnnouncementTitle("");
-        setAnnouncementContent("");
-        setAnnouncementPriority("通常");
-        setShowAnnouncementDialog(false);
-
-        // Firestoreに保存する処理（オプション）
         try {
             const response = await fetch("/api/announcements", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newAnnouncement),
+                body: JSON.stringify({
+                    title: announcementTitle.trim(),
+                    content: announcementContent.trim(),
+                    priority: announcementPriority,
+                    createdBy: teacherInfo.name,
+                    isTeacher: true,
+                }),
             });
+
             if (!response.ok) {
-                throw new Error("Failed to post announcement");
+                const errorData = await response.json();
+                throw new Error(errorData.error || "お知らせの投稿に失敗しました");
             }
+
+            // 投稿成功時に最新のお知らせ一覧を再読み込み（APIを使用）
+            const refreshResponse = await fetch("/api/announcements");
+            const refreshData = await refreshResponse.json();
+            if (refreshData && refreshData.success) {
+                setAnnouncements((refreshData.data as Announcement[]).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
+
+            setAnnouncementTitle("");
+            setAnnouncementContent("");
+            setAnnouncementPriority("通常");
+            setShowAnnouncementDialog(false);
+            successToast("投稿成功", "お知らせを投稿しました");
         } catch (error) {
             console.error("Error posting announcement:", error);
             const errorMessage = getErrorMessage(error);
-            console.warn("お知らせの保存に失敗しました（ローカルには保存済み）: " + errorMessage);
+            errorToast("投稿失敗", errorMessage);
         }
     };
 

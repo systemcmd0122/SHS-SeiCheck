@@ -198,6 +198,35 @@ export function MemberSelectionPage({
                     </div>
                 )}
 
+                {/* クイックアクセス（前回ログイン時） */}
+                {lastMember && (
+                    <Card className="border-2 border-primary/20 shadow-lg bg-primary/5 overflow-hidden">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                <UserCircle className="w-4 h-4 text-primary" />
+                                おかえりなさい
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 flex-shrink-0">
+                                        <UserCircle className="w-8 h-8 text-primary" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-base truncate">{lastMember.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{lastMember.committee}</p>
+                                    </div>
+                                </div>
+                                <Button onClick={handleContinueWithLast} size="sm" className="shrink-0">
+                                    <LogIn className="w-4 h-4 mr-2" />
+                                    入室
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="border-0 shadow-xl">
                     <CardHeader className="space-y-1 pb-3 sm:pb-4">
                         <CardTitle className="text-lg sm:text-xl">ようこそ</CardTitle>

@@ -349,6 +349,7 @@ export function PlanningChatPage({ events, backHref = "/admin" }: PlanningChatPa
                     deadline: deadline,
                     createdBy: "admin",
                     description: formData.description,
+                    isAttendanceRequired: false,
                 });
             }
 

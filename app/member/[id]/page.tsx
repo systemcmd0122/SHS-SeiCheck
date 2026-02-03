@@ -192,8 +192,25 @@ export default function MemberDashboard() {
     }
   };
 
-  const isDeadlinePassed = (event: Event) => {
-    return isPast(new Date(event.deadline));
+  const isDeadlinePassed = (event: Event | null) => {
+    if (!event || !event.deadline) return false;
+    try {
+      const date = new Date(event.deadline);
+      return !isNaN(date.getTime()) && isPast(date);
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const safeFormat = (dateStr: string | undefined, formatStr: string) => {
+    if (!dateStr) return "---";
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "---";
+      return format(date, formatStr, { locale: ja });
+    } catch (e) {
+      return "---";
+    }
   };
 
   const getMyResponse = (eventId: string) => {
@@ -362,7 +379,7 @@ export default function MemberDashboard() {
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-sm sm:text-base truncate">{event.title}</h4>
                     <p className="text-xs text-muted-foreground">
-                      締切: {format(new Date(event.deadline), "M/d HH:mm")}
+                      締切: {safeFormat(event.deadline, "M/d HH:mm")}
                     </p>
                   </div>
                   <Button size="sm" className="ml-4 shrink-0 bg-amber-600 hover:bg-amber-700 text-white">
@@ -416,7 +433,7 @@ export default function MemberDashboard() {
                     {announcement.content}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {format(new Date(announcement.createdAt), "M月d日 HH:mm", { locale: ja })}
+                    {safeFormat(announcement.createdAt, "M月d日 HH:mm")}
                   </p>
                 </div>
               ))}
@@ -490,7 +507,14 @@ export default function MemberDashboard() {
         <EventCalendar
           events={events}
           onEventClick={handleEventClick}
-          highlightDates={events.filter(e => !getMyResponse(e.id)).map(e => format(new Date(e.dateTime), "yyyy-MM-dd"))}
+          highlightDates={events
+            .filter(e => !getMyResponse(e.id) && e.dateTime)
+            .map(e => {
+                const d = new Date(e.dateTime);
+                return !isNaN(d.getTime()) ? format(d, "yyyy-MM-dd") : "";
+            })
+            .filter(Boolean)
+          }
           includeGoogleCalendar={true}
           googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
         />
@@ -556,15 +580,13 @@ export default function MemberDashboard() {
                           <div className="flex items-center gap-2">
                             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
-                              {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
-                                locale: ja,
-                              })}
+                              {safeFormat(event.dateTime, "M月d日(E) HH:mm")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
-                              締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
+                              締切: {safeFormat(event.deadline, "M月d日 HH:mm")}
                             </span>
                           </div>
                         </div>
@@ -607,7 +629,7 @@ export default function MemberDashboard() {
                     <div className="flex-1 min-w-0 text-sm">
                       <p className="font-medium truncate">{activity.event?.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(activity.updatedAt), "M/d HH:mm")} に回答
+                        {safeFormat(activity.updatedAt, "M/d HH:mm")} に回答
                       </p>
                     </div>
                   </div>
@@ -669,15 +691,13 @@ export default function MemberDashboard() {
                           <div className="flex items-center gap-2">
                             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
-                              {format(new Date(event.dateTime), "M月d日(E) HH:mm", {
-                                locale: ja,
-                              })}
+                              {safeFormat(event.dateTime, "M月d日(E) HH:mm")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                             <span>
-                              締切: {format(new Date(event.deadline), "M月d日 HH:mm")}
+                              締切: {safeFormat(event.deadline, "M月d日 HH:mm")}
                               {deadlinePassed && " (終了)"}
                             </span>
                           </div>
@@ -711,10 +731,7 @@ export default function MemberDashboard() {
               {selectedEvent?.title}
             </DialogTitle>
             <DialogDescription className="text-sm sm:text-base">
-              {selectedEvent &&
-                format(new Date(selectedEvent.dateTime), "M月d日(E) HH:mm", {
-                  locale: ja,
-                })}
+              {selectedEvent && safeFormat(selectedEvent.dateTime, "M月d日(E) HH:mm")}
             </DialogDescription>
           </DialogHeader>
 
@@ -818,17 +835,14 @@ export default function MemberDashboard() {
               {selectedEvent?.title}
             </DialogTitle>
             <DialogDescription className="text-sm sm:text-base">
-              {selectedEvent &&
-                format(new Date(selectedEvent.dateTime), "M月d日(E) HH:mm", {
-                  locale: ja,
-                })}
+              {selectedEvent && safeFormat(selectedEvent.dateTime, "M月d日(E) HH:mm")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto space-y-4 py-4">
             <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{selectedEvent?.type}</Badge>
-                {selectedEvent?.isAttendanceRequired === false && (
+                {selectedEvent && selectedEvent.isAttendanceRequired === false && (
                     <Badge variant="secondary">出欠確認不要</Badge>
                 )}
                 {selectedEvent && isDeadlinePassed(selectedEvent) && (
@@ -844,11 +858,11 @@ export default function MemberDashboard() {
                 </div>
             )}
 
-            {selectedEvent?.isAttendanceRequired !== false && (
+            {selectedEvent && selectedEvent.isAttendanceRequired !== false && (
                 <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                     <p className="text-xs text-blue-800 dark:text-blue-200">
                         この予定は出欠確認対象です。
-                        {isDeadlinePassed(selectedEvent!) ? "回答期限が過ぎているため、閲覧のみ可能です。" : ""}
+                        {isDeadlinePassed(selectedEvent) ? "回答期限が過ぎているため、閲覧のみ可能です。" : ""}
                     </p>
                 </div>
             )}
@@ -874,9 +888,7 @@ export default function MemberDashboard() {
               {selectedAnnouncement?.title}
             </DialogTitle>
             <DialogDescription className="text-sm sm:text-base">
-              {selectedAnnouncement && (
-                format(new Date(selectedAnnouncement.createdAt), "M月d日 HH:mm", { locale: ja })
-              )}
+              {selectedAnnouncement && safeFormat(selectedAnnouncement.createdAt, "M月d日 HH:mm")}
             </DialogDescription>
           </DialogHeader>
 

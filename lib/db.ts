@@ -37,6 +37,7 @@ export async function createEvent(event: Omit<Event, "id" | "createdAt">): Promi
     dateTime: event.dateTime,
     deadline: event.deadline,
     createdBy: event.createdBy,
+    isAttendanceRequired: event.isAttendanceRequired ?? true, // デフォルトは必要
     ...(event.description && { description: event.description }),
   };
 

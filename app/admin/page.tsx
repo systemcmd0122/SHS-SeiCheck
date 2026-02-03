@@ -260,6 +260,7 @@ export default function AdminPage() {
         dateTime: dateTime,
         deadline: deadline,
         createdBy: "admin",
+        isAttendanceRequired: true,
       });
 
       setIsCreateDialogOpen(false);
@@ -306,6 +307,7 @@ export default function AdminPage() {
         deadline: deadline,
         createdBy: "admin",
         description: newCalendarEvent.description,
+        isAttendanceRequired: false,
       });
 
       setIsAddEventDialogOpen(false);
@@ -414,8 +416,8 @@ export default function AdminPage() {
 
   const filteredEvents =
     selectedEventType === "全て"
-      ? events.filter((e) => e.type !== "その他")
-      : events.filter((e) => e.type === selectedEventType);
+      ? events.filter((e) => e.isAttendanceRequired !== false)
+      : events.filter((e) => e.type === selectedEventType && e.isAttendanceRequired !== false);
 
   const getUnansweredMembers = (eventId: string) => {
     const eventResponses = responses.filter((r) => r.eventId === eventId);
@@ -438,28 +440,31 @@ export default function AdminPage() {
   };
 
   const exportToCSV = () => {
-    const data = events.map((event) => {
-      const summary = getAttendanceSummary(event.id);
-      const row: any = {
-        予定名: event.title,
-        種類: event.type,
-        日時: format(new Date(event.dateTime), "yyyy/MM/dd HH:mm", { locale: ja }),
-        締切: format(new Date(event.deadline), "yyyy/MM/dd HH:mm", { locale: ja }),
-        参加: summary.attended,
-        不参加: summary.absent,
-        遅れる: summary.undecided,
-        未回答: summary.unanswered,
-      };
+    // 出欠確認が必要な予定のみをエクスポート
+    const data = events
+      .filter(e => e.isAttendanceRequired !== false)
+      .map((event) => {
+        const summary = getAttendanceSummary(event.id);
+        const row: any = {
+          予定名: event.title,
+          種類: event.type,
+          日時: format(new Date(event.dateTime), "yyyy/MM/dd HH:mm", { locale: ja }),
+          締切: format(new Date(event.deadline), "yyyy/MM/dd HH:mm", { locale: ja }),
+          参加: summary.attended,
+          不参加: summary.absent,
+          遅れる: summary.undecided,
+          未回答: summary.unanswered,
+        };
 
-      members.forEach((member) => {
-        const response = responses.find(
-          (r) => r.eventId === event.id && r.memberId === member.id
-        );
-        row[member.name] = response?.status || "未回答";
+        members.forEach((member) => {
+          const response = responses.find(
+            (r) => r.eventId === event.id && r.memberId === member.id
+          );
+          row[member.name] = response?.status || "未回答";
+        });
+
+        return row;
       });
-
-      return row;
-    });
 
     const csv = Papa.unparse(data, { header: true });
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -632,14 +637,14 @@ export default function AdminPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">総予定数</CardTitle>
+              <CardTitle className="text-sm font-medium">出欠確認予定数</CardTitle>
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
                 <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{events.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">登録済み予定</p>
+              <div className="text-3xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
+              <p className="text-xs text-muted-foreground mt-1">回答が必要な予定</p>
             </CardContent>
           </Card>
 

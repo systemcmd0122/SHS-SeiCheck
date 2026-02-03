@@ -246,7 +246,9 @@ export default function TeacherPage() {
 
     // イベント統計の計算
     const calculateEventStatistics = (): EventStatistics[] => {
-        return events.map((event) => {
+        return events
+            .filter(e => e.isAttendanceRequired !== false)
+            .map((event) => {
             const eventResponses = responses.filter((r) => r.eventId === event.id);
             const attended = eventResponses.filter((r) => r.status === "参加").length;
             const delayed = eventResponses.filter((r) => r.status === "遅れる").length;
@@ -274,13 +276,17 @@ export default function TeacherPage() {
 
     // メンバー詳細情報の計算
     const calculateMemberDetails = (): MemberDetail[] => {
+        const attendanceEvents = events.filter(e => e.isAttendanceRequired !== false);
         return members.map((member) => {
             const memberResponses = responses.filter((r) => r.memberId === member.id);
-            const attendanceCount = memberResponses.filter((r) => r.status === "参加" || r.status === "遅れる").length;
-            const absentCount = memberResponses.filter((r) => r.status === "不参加").length;
-            const delayedCount = memberResponses.filter((r) => r.status === "遅れる").length;
-            const unansweredCount = events.length - memberResponses.length;
-            const attendanceRate = events.length > 0 ? ((attendanceCount / events.length) * 100).toFixed(1) : "0";
+            // 出欠が必要な予定に対する回答のみをカウント
+            const validResponses = memberResponses.filter(r => attendanceEvents.some(e => e.id === r.eventId));
+            
+            const attendanceCount = validResponses.filter((r) => r.status === "参加" || r.status === "遅れる").length;
+            const absentCount = validResponses.filter((r) => r.status === "不参加").length;
+            const delayedCount = validResponses.filter((r) => r.status === "遅れる").length;
+            const unansweredCount = attendanceEvents.length - validResponses.length;
+            const attendanceRate = attendanceEvents.length > 0 ? ((attendanceCount / attendanceEvents.length) * 100).toFixed(1) : "0";
 
             return {
                 id: member.id,
@@ -300,11 +306,13 @@ export default function TeacherPage() {
     const memberDetails = calculateMemberDetails();
 
     // フィルタリングと検索
-    const filteredEvents = events.filter((event) => {
-        const matchesFilter = eventFilter === "all" || event.type === eventFilter;
-        const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
+    const filteredEvents = events
+        .filter(e => e.isAttendanceRequired !== false)
+        .filter((event) => {
+            const matchesFilter = eventFilter === "all" || event.type === eventFilter;
+            const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesFilter && matchesSearch;
+        });
 
     // ページネーション
     const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
@@ -330,12 +338,13 @@ export default function TeacherPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">総予定数</CardTitle>
+                        <CardTitle className="text-sm font-medium">出欠確認予定数</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{events.length}</div>
+                        <div className="text-2xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             今月: {events.filter((e) => {
+                                if (e.isAttendanceRequired === false) return false;
                                 const eventDate = new Date(e.dateTime);
                                 const now = new Date();
                                 return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();

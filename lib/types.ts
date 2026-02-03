@@ -27,6 +27,7 @@ export interface Event {
   createdAt: string;
   createdBy: string;
   description?: string;
+  isAttendanceRequired: boolean; // 出欠確認が必要かどうか
 }
 
 // 回答の型定義

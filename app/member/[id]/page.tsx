@@ -329,61 +329,64 @@ export default function MemberDashboard() {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5)
     .map(r => ({
-        ...r,
-        event: events.find(e => e.id === r.eventId)
+      ...r,
+      event: events.find(e => e.id === r.eventId)
     }))
     .filter(a => a.event && a.event.isAttendanceRequired !== false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 pb-12">
       {/* ヘッダー */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-              <User className="w-6 h-6 text-primary" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20">
+              <User className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold">{member.name}</h1>
-              <p className="text-xs text-muted-foreground">{member.committee}</p>
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-black truncate">{member.name}</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium truncate uppercase tracking-wider">{member.committee}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">ログアウト</span>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="rounded-full text-muted-foreground hover:text-foreground">
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline font-bold">ログアウト</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto p-3 sm:p-4 space-y-4 sm:space-y-6 max-w-4xl">
+      <div className="container mx-auto p-4 space-y-6 max-w-4xl animate-fade-in">
         {/* 緊急のアクションが必要な予定 */}
         {urgentEvents.length > 0 && (
-          <Card className="border-2 border-amber-500 shadow-lg animate-pulse-subtle bg-amber-50/50 dark:bg-amber-950/20">
+          <Card className="border-none shadow-xl shadow-amber-500/10 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+              <AlertTriangle className="w-24 h-24" />
+            </div>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                <AlertTriangle className="w-5 h-5" />
-                回答が必要です
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black">
+                <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                回答が必要な予定
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 relative z-10">
               {urgentEvents.map((event) => (
                 <div
                   key={event.id}
                   onClick={() => handleEventClick(event)}
-                  className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 cursor-pointer hover:shadow-md transition-shadow"
+                  className="group flex items-center justify-between p-4 rounded-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-amber-200 dark:border-amber-800 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98]"
                 >
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-sm sm:text-base truncate">{event.title}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      締切: {safeFormat(event.deadline, "M/d HH:mm")}
+                    <h4 className="font-black text-sm sm:text-base truncate group-hover:text-amber-600 transition-colors">{event.title}</h4>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      締切まで残りわずか: <span className="text-amber-600 dark:text-amber-400 font-bold">{safeFormat(event.deadline, "M/d HH:mm")}</span>
                     </p>
                   </div>
-                  <Button size="sm" className="ml-4 shrink-0 bg-amber-600 hover:bg-amber-700 text-white">
-                    回答する
+                  <Button size="sm" className="ml-4 shrink-0 bg-amber-600 hover:bg-amber-700 text-white rounded-full px-4 shadow-lg shadow-amber-600/20">
+                    回答
                   </Button>
                 </div>
               ))}
@@ -392,112 +395,117 @@ export default function MemberDashboard() {
         )}
 
         {/* お知らせセクション */}
-        {announcements.length > 0 && (
-          <Card className="border-0 shadow-md">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+        <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-3 sm:pb-4 flex flex-row items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2 font-black italic uppercase tracking-tighter">
                 <Bell className="w-5 h-5 text-primary" />
                 お知らせ
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                最新のお知らせを確認してください
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3">
-              {announcements.slice(0, 3).map((announcement) => (
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {announcements.length > 0 ? (
+              announcements.slice(0, 3).map((announcement) => (
                 <div
                   key={announcement.id}
                   onClick={() => {
                     setSelectedAnnouncement(announcement);
                     setAnnouncementDialogOpen(true);
                   }}
-                  className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer active:shadow-lg ${announcement.priority === "緊急"
-                    ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
+                  className={`p-4 rounded-xl border transition-all cursor-pointer active:scale-[0.99] group ${announcement.priority === "緊急"
+                    ? "border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30"
                     : announcement.priority === "重要"
-                      ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
-                      : "bg-card hover:shadow-md"
+                      ? "border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30"
+                      : "bg-muted/30 border-transparent hover:bg-muted/50"
                     }`}
                 >
-                  <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
+                  <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0">
-                      {announcement.priority !== "通常" && (
-                        <Megaphone className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      )}
-                      <h3 className="font-semibold text-sm sm:text-base truncate">
+                      <h3 className="font-bold text-sm sm:text-base truncate group-hover:text-primary transition-colors">
                         {announcement.title}
                       </h3>
                     </div>
                     <div className="shrink-0">{getPriorityBadge(announcement.priority)}</div>
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap">
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 font-medium">
                     {announcement.content}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {safeFormat(announcement.createdAt, "M月d日 HH:mm")}
-                  </p>
+                  <div className="flex items-center justify-between mt-3">
+                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                      {safeFormat(announcement.createdAt, "yyyy.MM.dd")}
+                    </p>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
+                  </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+              ))
+            ) : (
+              <div className="py-8 text-center bg-muted/20 rounded-xl border-2 border-dashed border-muted">
+                <Megaphone className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">現在お知らせはありません</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* 統計カード */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">参加</CardTitle>
-              <div className="p-1.5 sm:p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
-                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <Card className="border-none shadow-xl bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden relative group">
+            <div className="absolute -right-2 -bottom-2 opacity-5 transform rotate-12 group-hover:scale-110 transition-transform">
+              <CheckCircle2 className="w-20 h-20 text-emerald-600" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-emerald-700/70 dark:text-emerald-400/70">参加</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.participated}</div>
-              <p className="text-xs text-muted-foreground mt-1">回答済み</p>
+            <CardContent className="relative z-10 flex items-baseline gap-1">
+              <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400">{stats.participated}</div>
+              <span className="text-[10px] font-bold text-emerald-600/60 dark:text-emerald-400/40 uppercase">件</span>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">遅れる</CardTitle>
-              <div className="p-1.5 sm:p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
-                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600 dark:text-amber-400" />
-              </div>
+          <Card className="border-none shadow-xl bg-amber-50/50 dark:bg-amber-950/20 overflow-hidden relative group">
+            <div className="absolute -right-2 -bottom-2 opacity-5 transform rotate-12 group-hover:scale-110 transition-transform">
+              <Clock className="w-20 h-20 text-amber-600" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-amber-700/70 dark:text-amber-400/70">遅刻</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.late}</div>
-              <p className="text-xs text-muted-foreground mt-1">遅刻予定</p>
+            <CardContent className="relative z-10 flex items-baseline gap-1">
+              <div className="text-3xl font-black text-amber-700 dark:text-amber-400">{stats.late}</div>
+              <span className="text-[10px] font-bold text-amber-600/60 dark:text-amber-400/40 uppercase">件</span>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">不参加</CardTitle>
-              <div className="p-1.5 sm:p-2 bg-rose-100 dark:bg-rose-900 rounded-lg">
-                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-rose-600 dark:text-rose-400" />
-              </div>
+          <Card className="border-none shadow-xl bg-rose-50/50 dark:bg-rose-950/20 overflow-hidden relative group">
+            <div className="absolute -right-2 -bottom-2 opacity-5 transform rotate-12 group-hover:scale-110 transition-transform">
+              <XCircle className="w-20 h-20 text-rose-600" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-rose-700/70 dark:text-rose-400/70">欠席</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.absent}</div>
-              <p className="text-xs text-muted-foreground mt-1">欠席</p>
+            <CardContent className="relative z-10 flex items-baseline gap-1">
+              <div className="text-3xl font-black text-rose-700 dark:text-rose-400">{stats.absent}</div>
+              <span className="text-[10px] font-bold text-rose-600/60 dark:text-rose-400/40 uppercase">件</span>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium">未回答</CardTitle>
-              <div className="p-1.5 sm:p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
-              </div>
+          <Card className="border-none shadow-xl bg-gray-50 dark:bg-gray-900/50 overflow-hidden relative group">
+            <div className="absolute -right-2 -bottom-2 opacity-5 transform rotate-12 group-hover:scale-110 transition-transform">
+              <Activity className="w-20 h-20 text-gray-400" />
+            </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">未回答</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold">{stats.unanswered}</div>
+            <CardContent className="relative z-10">
+              <div className="flex items-baseline gap-1">
+                <div className="text-3xl font-black">{stats.unanswered}</div>
+                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">件</span>
+              </div>
               {stats.overdueUnanswered > 0 && (
-                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                  期限切れ {stats.overdueUnanswered}件
+                <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {stats.overdueUnanswered} 件期限切れ
                 </p>
-              )}
-              {stats.overdueUnanswered === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">残り回答</p>
               )}
             </CardContent>
           </Card>
@@ -611,113 +619,121 @@ export default function MemberDashboard() {
         )}
 
         {/* 最近の活動 */}
-        {recentActivities.length > 0 && (
-          <Card className="border-0 shadow-md">
-            <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                あなたの最近の回答
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2 font-black italic uppercase tracking-tighter">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              最近の活動
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentActivities.length > 0 ? (
               <div className="space-y-4">
                 {recentActivities.map((activity, idx) => (
-                  <div key={`${activity.eventId}-${idx}`} className="flex items-start gap-3">
-                    <div className="mt-1">
-                        {getStatusBadge(activity.status)}
+                  <div key={`${activity.eventId}-${idx}`} className="flex items-start gap-4 p-3 rounded-xl hover:bg-muted/30 transition-colors">
+                    <div className="mt-1 shrink-0">
+                      {getStatusBadge(activity.status)}
                     </div>
-                    <div className="flex-1 min-w-0 text-sm">
-                      <p className="font-medium truncate">{activity.event?.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {safeFormat(activity.updatedAt, "M/d HH:mm")} に回答
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm sm:text-base truncate">{activity.event?.title}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-1">
+                        {safeFormat(activity.updatedAt, "yyyy.MM.dd HH:mm")} 更新
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="py-8 text-center bg-muted/20 rounded-xl border-2 border-dashed border-muted">
+                <Activity className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">最近の活動はありません</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* 全予定一覧 */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              出欠確認が必要な予定
+        <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-3 sm:pb-4 bg-muted/20 border-b border-muted">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2 font-black italic uppercase tracking-tighter text-primary">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+              出欠確認一覧
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
+            <CardDescription className="text-xs font-medium">
               予定をタップして出欠を回答してください
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 sm:space-y-3">
+          <CardContent className="p-0">
             {events.filter(e => e.isAttendanceRequired !== false).length === 0 ? (
-              <div className="py-8 sm:py-12 text-center">
-                <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
-                <p className="text-xs sm:text-sm text-muted-foreground">予定がありません</p>
+              <div className="py-12 text-center">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">予定はありません</p>
               </div>
             ) : (
-              events.filter(e => e.isAttendanceRequired !== false).map((event) => {
-                const response = getMyResponse(event.id);
-                const status: ResponseStatus = response?.status || "未回答";
-                const deadlinePassed = isDeadlinePassed(event);
-                const isOverdue = deadlinePassed && !response;
+              <div className="divide-y divide-muted">
+                {events.filter(e => e.isAttendanceRequired !== false).map((event) => {
+                  const response = getMyResponse(event.id);
+                  const status: ResponseStatus = response?.status || "未回答";
+                  const deadlinePassed = isDeadlinePassed(event);
+                  const isOverdue = deadlinePassed && !response;
 
-                return (
-                  <div
-                    key={event.id}
-                    className={`p-3 sm:p-4 rounded-lg border transition-all ${isOverdue
-                      ? "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/50"
-                      : "bg-card hover:shadow-md"
-                      } ${!deadlinePassed ? "cursor-pointer active:shadow-lg" : "opacity-60"}`}
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <div className="flex items-start justify-between gap-2 sm:gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap gap-y-1">
-                          <h3 className="font-semibold text-sm sm:text-base truncate">
-                            {event.title}
-                          </h3>
-                          <Badge variant="outline" className="shrink-0 text-xs">
-                            {event.type}
-                          </Badge>
-                          {isOverdue && (
-                            <Badge className="bg-orange-500 text-white border-0 shrink-0 text-xs">
-                              期限切れ
+                  return (
+                    <div
+                      key={event.id}
+                      className={`group p-4 sm:p-6 transition-all relative overflow-hidden ${isOverdue
+                        ? "bg-orange-50/30 dark:bg-orange-950/10"
+                        : "hover:bg-muted/50"
+                        } ${!deadlinePassed ? "cursor-pointer active:bg-muted/80" : "opacity-60"}`}
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <div className="flex items-start justify-between gap-4 relative z-10">
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-black text-sm sm:text-lg truncate group-hover:text-primary transition-colors">
+                              {event.title}
+                            </h3>
+                            <Badge variant="outline" className="shrink-0 text-[10px] font-black uppercase tracking-widest py-0 h-5">
+                              {event.type}
                             </Badge>
+                            {isOverdue && (
+                              <Badge className="bg-orange-500 text-white border-0 shrink-0 text-[10px] font-black uppercase tracking-widest py-0 h-5">
+                                期限切れ
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] sm:text-xs text-muted-foreground font-bold uppercase tracking-wide">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-3.5 h-3.5 text-primary/60 shrink-0" />
+                              <span>
+                                {safeFormat(event.dateTime, "M月d日(E) HH:mm")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5 text-primary/60 shrink-0" />
+                              <span>
+                                締切: {safeFormat(event.deadline, "M月d日 HH:mm")}
+                              </span>
+                            </div>
+                          </div>
+                          {response?.reason && (
+                            <div className="p-3 rounded-xl bg-muted/50 text-[11px] sm:text-xs text-muted-foreground font-medium italic border-l-2 border-primary/20">
+                              理由: {response.reason}
+                            </div>
                           )}
                         </div>
-                        <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                            <span>
-                              {safeFormat(event.dateTime, "M月d日(E) HH:mm")}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                            <span>
-                              締切: {safeFormat(event.deadline, "M月d日 HH:mm")}
-                              {deadlinePassed && " (終了)"}
-                            </span>
-                          </div>
+                        <div className="flex flex-col items-end gap-3 shrink-0 self-center">
+                          {getStatusBadge(status, isOverdue)}
+                          {!deadlinePassed && (
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1">
+                              <ChevronRight className="w-5 h-5" />
+                            </div>
+                          )}
                         </div>
-                        {response?.reason && (
-                          <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-2">
-                            理由: {response.reason}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end gap-1.5 sm:gap-2 shrink-0">
-                        {getStatusBadge(status, isOverdue)}
-                        {!deadlinePassed && (
-                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-                        )}
                       </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>

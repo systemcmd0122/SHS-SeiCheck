@@ -112,36 +112,46 @@ export function MemberSelectionPage({
     const lastMember = lastMemberId ? members.find((m) => m.id === lastMemberId) : null;
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-3 sm:p-4">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 p-4">
             {/* 前回ユーザー確認ダイアログ */}
             <Dialog open={showContinueDialog} onOpenChange={setShowContinueDialog}>
-                <DialogContent className="w-[95vw] sm:max-w-md p-4 sm:p-6">
-                    <DialogHeader className="space-y-2">
-                        <DialogTitle className="text-lg sm:text-xl">前回のログイン情報</DialogTitle>
-                        <DialogDescription className="text-sm sm:text-base">
-                            前回このユーザーでログインしました
+                <DialogContent className="w-[92vw] sm:max-w-md p-6 rounded-2xl border-none shadow-2xl">
+                    <DialogHeader className="space-y-3">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                            <UserCircle className="w-8 h-8 text-primary" />
+                        </div>
+                        <DialogTitle className="text-xl sm:text-2xl text-center font-bold">おかえりなさい！</DialogTitle>
+                        <DialogDescription className="text-center text-balance">
+                            前回使用したアカウントでログインを継続しますか？
                         </DialogDescription>
                     </DialogHeader>
                     {lastMember && (
-                        <div className="py-4">
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 flex-shrink-0">
-                                    <UserCircle className="w-6 h-6 text-primary" />
+                        <div className="py-6">
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-primary/10 shadow-inner">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-md flex-shrink-0 font-bold text-lg">
+                                    {lastMember.name.charAt(0)}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="font-medium text-sm sm:text-base truncate">{lastMember.name}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="font-bold text-lg truncate">{lastMember.name}</p>
+                                    <p className="text-sm text-muted-foreground">
                                         {lastMember.committee}
                                     </p>
                                 </div>
                             </div>
                         </div>
                     )}
-                    <DialogFooter className="flex flex-col gap-2 sm:flex-row justify-end pt-4 border-t">
-                        <Button onClick={handleSelectNew} variant="outline" className="w-full sm:w-auto order-2 sm:order-1" size="sm">
+                    <DialogFooter className="flex flex-col gap-3 sm:flex-row pt-2">
+                        <Button 
+                            onClick={handleSelectNew} 
+                            variant="ghost" 
+                            className="w-full sm:flex-1 order-2 sm:order-1 text-muted-foreground hover:text-foreground"
+                        >
                             別のユーザーを選択
                         </Button>
-                        <Button onClick={handleContinueWithLast} className="w-full sm:w-auto order-1 sm:order-2" size="sm">
+                        <Button 
+                            onClick={handleContinueWithLast} 
+                            className="w-full sm:flex-1 order-1 sm:order-2 shadow-lg shadow-primary/20 h-11"
+                        >
                             <LogIn className="w-4 h-4 mr-2" />
                             続ける
                         </Button>
@@ -150,29 +160,32 @@ export function MemberSelectionPage({
             </Dialog>
 
             {showAdminButton && (
-                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-2">
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/50 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-sm">
                     <Button
                         onClick={handleTeacherAccess}
-                        variant="outline"
-                        className="hidden sm:flex items-center gap-2"
+                        variant="ghost"
+                        size="sm"
+                        className="hidden sm:flex items-center gap-2 rounded-full h-8 px-3 text-muted-foreground hover:text-foreground"
                     >
                         <GraduationCap className="w-4 h-4" />
-                        先生はこちら
+                        先生
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleTeacherAccess}
-                        className="sm:hidden text-muted-foreground hover:text-foreground"
+                        className="sm:hidden text-muted-foreground hover:text-foreground w-8 h-8 rounded-full"
                         title="先生ログイン"
                     >
                         <GraduationCap className="w-5 h-5" />
                     </Button>
+                    <div className="w-px h-4 bg-border/50 mx-1 hidden sm:block" />
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleAdminAccess}
-                        className="text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground w-8 h-8 rounded-full"
+                        title="設定"
                     >
                         <Settings className="w-5 h-5" />
                     </Button>
@@ -180,18 +193,22 @@ export function MemberSelectionPage({
                 </div>
             )}
 
-            <div className="w-full max-w-md space-y-6">
-                <div className="text-center mb-6 sm:mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                        <UserCircle className="w-10 h-10 text-primary" />
+            <div className="w-full max-w-md space-y-8 animate-fade-in">
+                <div className="text-center space-y-4">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary shadow-xl shadow-primary/20 mb-2 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+                        <UserCircle className="w-12 h-12 text-primary-foreground" />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">{title}</h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
+                    <div className="space-y-1">
+                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                            {title}
+                        </h1>
+                        <p className="text-base text-muted-foreground font-medium">{description}</p>
+                    </div>
                 </div>
 
                 {/* 今日の予定表示 */}
                 {events.length > 0 && (
-                    <div className="w-full">
+                    <div className="w-full animate-fade-in [animation-delay:200ms]">
                         <TodayEventsList
                             events={events}
                         />
@@ -200,52 +217,56 @@ export function MemberSelectionPage({
 
                 {/* クイックアクセス（前回ログイン時） */}
                 {lastMember && (
-                    <Card className="border-2 border-primary/20 shadow-lg bg-primary/5 overflow-hidden">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                <UserCircle className="w-4 h-4 text-primary" />
+                    <Card className="border-none shadow-xl bg-primary/5 dark:bg-primary/10 overflow-hidden group hover:shadow-2xl transition-all duration-300 animate-fade-in [animation-delay:400ms]">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary/70 flex items-center gap-2">
+                                <span className="w-1 h-1 rounded-full bg-primary" />
                                 おかえりなさい
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pb-6">
                             <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 flex-shrink-0">
-                                        <UserCircle className="w-8 h-8 text-primary" />
+                                <div className="flex items-center gap-4 min-w-0">
+                                    <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg flex-shrink-0 font-bold text-xl group-hover:scale-105 transition-transform">
+                                        {lastMember.name.charAt(0)}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="font-bold text-base truncate">{lastMember.name}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{lastMember.committee}</p>
+                                        <p className="font-black text-xl truncate">{lastMember.name}</p>
+                                        <p className="text-sm text-muted-foreground font-medium truncate">{lastMember.committee}</p>
                                     </div>
                                 </div>
-                                <Button onClick={handleContinueWithLast} size="sm" className="shrink-0">
-                                    <LogIn className="w-4 h-4 mr-2" />
+                                <Button 
+                                    onClick={handleContinueWithLast} 
+                                    size="lg" 
+                                    className="shrink-0 rounded-xl px-6 shadow-lg shadow-primary/20 group-hover:translate-x-1 transition-all"
+                                >
                                     入室
+                                    <LogIn className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
                 )}
 
-                <Card className="border-0 shadow-xl">
-                    <CardHeader className="space-y-1 pb-3 sm:pb-4">
-                        <CardTitle className="text-lg sm:text-xl">ようこそ</CardTitle>
-                        <CardDescription className="text-sm">
+                <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-xl animate-fade-in [animation-delay:600ms]">
+                    <CardHeader className="space-y-1 pb-4">
+                        <CardTitle className="text-xl font-bold">新規ログイン</CardTitle>
+                        <CardDescription className="text-sm font-medium">
                             あなたの名前を選択してください
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4 px-4 sm:px-6">
-                        <div className="space-y-2">
+                    <CardContent className="space-y-6 px-6 pb-8">
+                        <div className="space-y-3">
                             <Select onValueChange={handleSelect} value={selectedMemberId || ""}>
-                                <SelectTrigger className="h-12 text-base">
+                                <SelectTrigger className="h-14 text-base rounded-xl border-muted-foreground/20 bg-background/50 focus:ring-primary/20 transition-all">
                                     <SelectValue placeholder="名前を選択..." />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-[200px]">
+                                <SelectContent className="max-h-[300px] rounded-xl border-none shadow-2xl">
                                     {members.map((member) => (
-                                        <SelectItem key={member.id} value={member.id}>
-                                            <div className="flex flex-col items-start">
-                                                <span className="font-medium">{member.name}</span>
-                                                <span className="text-xs text-muted-foreground">
+                                        <SelectItem key={member.id} value={member.id} className="rounded-lg m-1 py-3 focus:bg-primary/10">
+                                            <div className="flex flex-col items-start gap-0.5">
+                                                <span className="font-bold text-base">{member.name}</span>
+                                                <span className="text-xs text-muted-foreground font-medium">
                                                     {member.committee}
                                                 </span>
                                             </div>
@@ -256,10 +277,9 @@ export function MemberSelectionPage({
                         </div>
 
                         <Button
-                            className="w-full h-12 sm:h-11 text-base"
+                            className="w-full h-14 text-lg font-bold rounded-xl shadow-xl shadow-primary/10"
                             onClick={handleStart}
                             disabled={!selectedMemberId}
-                            size="lg"
                         >
                             <LogIn className="w-5 h-5 mr-2" />
                             {buttonLabel}
@@ -267,9 +287,12 @@ export function MemberSelectionPage({
                     </CardContent>
                 </Card>
 
-                <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                    生徒会専用システム
-                </p>
+                <div className="flex flex-col items-center gap-4 text-muted-foreground animate-fade-in [animation-delay:800ms]">
+                    <div className="w-8 h-1 rounded-full bg-muted/30" />
+                    <p className="text-xs sm:text-sm font-bold tracking-widest uppercase opacity-50">
+                        Student Council Management System
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -22,6 +22,8 @@ import {
   TrendingUp,
   History,
   Share2,
+  LayoutDashboard,
+  Filter,
 } from "lucide-react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
@@ -575,171 +577,175 @@ export default function AdminPage() {
       <div className="container mx-auto p-4 space-y-6 max-w-7xl">
         {/* お知らせ管理セクション (上部クイック表示) */}
         {announcements.length > 0 && (
-          <Card className="border-0 shadow-md">
-            <CardHeader>
+          <Card className="border-0 shadow-sm overflow-hidden animate-fade-in">
+            <CardHeader className="bg-muted/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-primary" />
+                  <CardTitle className="section-title text-base flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-primary" />
                     お知らせ管理
                   </CardTitle>
-                  <CardDescription className="mt-1">
+                  <CardDescription className="mt-0.5">
                     作成したお知らせの管理
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {announcements.map((announcement) => (
+            <CardContent className="space-y-3 pt-4">
+              {announcements.slice(0, 3).map((announcement) => (
                 <div
                   key={announcement.id}
-                  className={`p-4 rounded-lg border transition-all ${announcement.priority === "緊急"
-                    ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
+                  className={`p-4 rounded-xl border transition-all card-hover ${announcement.priority === "緊急"
+                    ? "border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20"
                     : announcement.priority === "重要"
-                      ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
-                      : "bg-card"
+                      ? "border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20"
+                      : "bg-card border-border/50"
                     }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1.5">
                         {announcement.priority !== "通常" && (
-                          <Megaphone className="w-4 h-4 text-primary shrink-0" />
+                          <Megaphone className="w-3.5 h-3.5 text-primary shrink-0" />
                         )}
-                        <h3 className="font-semibold text-base truncate">
+                        <h3 className="font-bold text-sm truncate">
                           {announcement.title}
                         </h3>
                         {getPriorityBadge(announcement.priority)}
                       </div>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-2">
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap mb-2 line-clamp-1">
                         {announcement.content}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] label-caps text-muted-foreground">
                         {format(new Date(announcement.createdAt), "M月d日 HH:mm", { locale: ja })}
-                        {announcement.updatedAt && " (編集済み)"}
                       </p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-100/50"
                         onClick={() => handleEditAnnouncement(announcement)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-100/50"
                         onClick={() => handleDeleteAnnouncement(announcement.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
                 </div>
               ))}
+              {announcements.length > 3 && (
+                <Button variant="ghost" className="w-full text-xs text-muted-foreground h-8" onClick={() => setActiveTab("announcements")}>
+                  すべて表示 ({announcements.length}件)
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
 
         {/* 統計カード */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-0 shadow-md">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
+          <Card className="border-0 shadow-sm card-hover bg-blue-50/50 dark:bg-blue-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">出欠確認予定数</CardTitle>
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <CardTitle className="text-xs font-bold label-caps">出欠確認予定数</CardTitle>
+              <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
-              <p className="text-xs text-muted-foreground mt-1">回答が必要な予定</p>
+              <div className="text-2xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
+              <p className="text-[10px] text-muted-foreground mt-1">回答が必要な予定</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
+          <Card className="border-0 shadow-sm card-hover bg-emerald-50/50 dark:bg-emerald-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">メンバー数</CardTitle>
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <CardTitle className="text-xs font-bold label-caps">メンバー数</CardTitle>
+              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{members.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">生徒会メンバー</p>
+              <div className="text-2xl font-bold">{members.length}</div>
+              <p className="text-[10px] text-muted-foreground mt-1">生徒会メンバー</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
+          <Card className="border-0 shadow-sm card-hover bg-rose-50/50 dark:bg-rose-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">締切超過</CardTitle>
-              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+              <CardTitle className="text-xs font-bold label-caps">締切超過</CardTitle>
+              <div className="p-1.5 bg-rose-100 dark:bg-rose-900 rounded-lg">
+                <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
+              <div className="text-2xl font-bold">
                 {events.filter((e) => isOverdue(e) && getUnansweredMembers(e.id).length > 0).length}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">未回答あり</p>
+              <p className="text-[10px] text-muted-foreground mt-1">未回答あり</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md">
+          <Card className="border-0 shadow-sm card-hover bg-purple-50/50 dark:bg-purple-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">総回答数</CardTitle>
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <CheckCircle2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <CardTitle className="text-xs font-bold label-caps">総回答数</CardTitle>
+              <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{responses.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">提出済み</p>
+              <div className="text-2xl font-bold">{responses.length}</div>
+              <p className="text-[10px] text-muted-foreground mt-1">提出済み</p>
             </CardContent>
           </Card>
         </div>
 
         {/* メインコンテンツ */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="hidden md:flex items-center justify-between">
+          <div className="hidden md:flex items-center justify-between bg-muted/30 p-1.5 rounded-2xl border border-border/50">
             <div className="flex items-center justify-center overflow-x-auto flex-1">
-              <TabsList className="inline-flex h-11 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+              <TabsList className="bg-transparent h-10 gap-1">
                 <TabsTrigger
                   value="announcements"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
                   <Bell className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">お知らせ</span>
+                  <span className="font-bold">お知らせ</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="calendar"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">カレンダー</span>
+                  <span className="font-bold">カレンダー</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="events"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">予定一覧</span>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  <span className="font-bold">予定一覧</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="matrix"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">マトリクス</span>
+                  <span className="font-bold">マトリクス</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="history"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
                   <History className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">履歴</span>
+                  <span className="font-bold">履歴</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -875,12 +881,12 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <TabsContent value="announcements" id="tab-content-announcements" className="space-y-4">
-            <Card className="border-0 shadow-md">
-              <CardHeader>
+          <TabsContent value="announcements" id="tab-content-announcements" className="space-y-4 animate-fade-in">
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>お知らせ一覧</CardTitle>
+                    <CardTitle className="section-title">お知らせ一覧</CardTitle>
                     <CardDescription className="mt-1">
                       メンバーに表示されるお知らせを管理
                     </CardDescription>
@@ -1008,8 +1014,9 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="calendar" id="tab-content-calendar" className="space-y-4">
-            <EventCalendar
+          <TabsContent value="calendar" id="tab-content-calendar" className="space-y-4 animate-fade-in">
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-border">
+              <EventCalendar
               events={events}
               highlightDates={events
                 .filter((e) => e.type !== "その他" && getUnansweredMembers(e.id).length > 0 && e.dateTime)
@@ -1021,35 +1028,39 @@ export default function AdminPage() {
               }
               includeGoogleCalendar={true}
               googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
-              onAddEvent={() => setIsAddEventDialogOpen(true)}
-              onDeleteEvent={handleDeleteEvent}
-            />
+                onAddEvent={() => setIsAddEventDialogOpen(true)}
+                onDeleteEvent={handleDeleteEvent}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="events" id="tab-content-events" className="space-y-4" ref={eventListRef}>
-            <Card className="border-0 shadow-md">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <Label className="text-sm font-medium">絞り込み:</Label>
-                  <Select
-                    value={selectedEventType}
-                    onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
-                  >
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="全て">全て</SelectItem>
-                      {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-            </Card>
+          <TabsContent value="events" id="tab-content-events" className="space-y-6 animate-fade-in" ref={eventListRef}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 bg-card px-4 py-2 rounded-xl border border-border/50 shadow-sm">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類で絞り込み</Label>
+                <Select
+                  value={selectedEventType}
+                  onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
+                >
+                  <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs border-0 shadow-none focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="全て">全て</SelectItem>
+                    {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button size="sm" className="rounded-xl shadow-md" onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                新規作成
+              </Button>
+            </div>
 
             <div className="space-y-4">
               {filteredEvents.length === 0 ? (
@@ -1079,52 +1090,51 @@ export default function AdminPage() {
                           return (
                             <Card
                               key={event.id}
-                              className={`border-0 shadow-md transition-all ${hasWarning ? "ring-2 ring-red-500" : ""
+                              className={`border-0 shadow-sm transition-all overflow-hidden card-hover ${hasWarning ? "ring-2 ring-rose-500 ring-offset-2 dark:ring-offset-gray-950" : ""
                                 }`}
                             >
-                              <CardHeader className="pb-3">
-                                <div className="flex items-start justify-between gap-2">
+                              <CardHeader className="bg-muted/30 pb-4">
+                                <div className="flex items-start justify-between gap-4">
                                   <div className="space-y-2 flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <CardTitle className="text-lg sm:text-xl truncate">
+                                      <CardTitle className="section-title truncate">
                                         {event.title}
                                       </CardTitle>
-                                      <Badge variant="outline" className="shrink-0">
+                                      <Badge variant="secondary" className="shrink-0 font-normal">
                                         {event.type}
                                       </Badge>
                                       {hasWarning && (
-                                        <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 shrink-0">
+                                        <Badge className="bg-rose-500 hover:bg-rose-600 text-white border-0 shrink-0">
                                           <AlertTriangle className="w-3 h-3 mr-1" />
-                                          <span className="hidden sm:inline">締切超過</span>
-                                          <span className="sm:hidden">警告</span>
+                                          <span className="hidden sm:inline text-[10px]">締切超過</span>
+                                          <span className="sm:hidden text-[10px]">警告</span>
                                         </Badge>
                                       )}
                                     </div>
-                                    <CardDescription className="text-xs sm:text-sm">
-                                      <div className="flex flex-col gap-1">
-                                        <span>
-                                          開催: {safeFormat(event.dateTime, "M/d HH:mm")}
-                                        </span>
-                                        <span>
-                                          締切: {safeFormat(event.deadline, "M/d HH:mm")}
-                                        </span>
-                                      </div>
-                                    </CardDescription>
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        開催: {safeFormat(event.dateTime, "yyyy/MM/dd HH:mm")}
+                                      </span>
+                                      <span className={`flex items-center gap-1 ${overdue ? "text-rose-600 font-bold" : ""}`}>
+                                        <Clock className="w-3 h-3" />
+                                        締切: {safeFormat(event.deadline, "yyyy/MM/dd HH:mm")}
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex items-center gap-1 shrink-0">
                                     <Button
-                                      variant="outline"
-                                      size="sm"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={() => setSelectedEventForShare(event)}
-                                      className="gap-2"
+                                      className="h-8 w-8 text-primary hover:bg-primary/10"
                                     >
                                       <Share2 className="h-4 w-4" />
-                                      <span className="hidden sm:inline">共有</span>
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                      className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
                                       onClick={() => handleDeleteEvent(event.id)}
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -1259,23 +1269,24 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="matrix" id="tab-content-matrix" className="space-y-4">
-            <Card className="border-0 shadow-md">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <TabsContent value="matrix" id="tab-content-matrix" className="space-y-4 animate-fade-in">
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                    <CardTitle>出欠マトリクス</CardTitle>
+                    <CardTitle className="section-title">出欠マトリクス</CardTitle>
                     <CardDescription className="mt-1">
                       全メンバーと全予定の出欠状況一覧
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm font-medium">絞り込み:</Label>
+                  <div className="flex items-center gap-3 bg-card px-3 py-1.5 rounded-xl border border-border/50">
+                    <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Label className="text-xs font-bold label-caps text-muted-foreground">種類で絞り込み</Label>
                     <Select
                       value={selectedEventType}
                       onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
                     >
-                      <SelectTrigger className="w-[140px]">
+                      <SelectTrigger className="w-[120px] h-7 text-xs border-0 shadow-none focus:ring-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1436,7 +1447,7 @@ export default function AdminPage() {
           </TabsContent>
 
           {/* 履歴タブ */}
-          <TabsContent value="history" id="tab-content-history" className="space-y-4">
+          <TabsContent value="history" id="tab-content-history" className="space-y-4 animate-fade-in">
             <HistoryPanel events={events} responses={responses} members={members} />
           </TabsContent>
         </Tabs>

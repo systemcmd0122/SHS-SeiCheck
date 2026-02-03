@@ -19,6 +19,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
+import { Calendar, FileText, ClipboardCheck } from "lucide-react";
 
 interface ChartData {
     name: string;
@@ -93,11 +94,11 @@ export function AttendanceChart({ data, title = "出欠状況" }: AttendanceChar
     const total = data.attended + data.delayed + data.absent + data.unanswered;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
+        <Card className="shadow-sm border-0 overflow-hidden">
+            <CardHeader className="bg-muted/30 pb-4">
+                <CardTitle className="section-title">{title}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                         <Pie
@@ -107,6 +108,8 @@ export function AttendanceChart({ data, title = "出欠状況" }: AttendanceChar
                             labelLine={false}
                             label={({ name, value }) => `${name}: ${value}`}
                             outerRadius={100}
+                            innerRadius={60}
+                            paddingAngle={2}
                             fill="#8884d8"
                             dataKey="value"
                         >
@@ -117,16 +120,16 @@ export function AttendanceChart({ data, title = "出欠状況" }: AttendanceChar
                         <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                 </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="text-center">
-                        <p className="text-sm text-muted-foreground">参加率</p>
-                        <p className="text-2xl font-bold">
+                <div className="grid grid-cols-2 gap-6 mt-8 p-4 bg-muted/20 rounded-xl">
+                    <div className="text-center border-r border-border/50">
+                        <p className="text-xs label-caps text-muted-foreground mb-1">参加率</p>
+                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                             {total > 0 ? (((data.attended + data.delayed) / total) * 100).toFixed(1) : 0}%
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-sm text-muted-foreground">回答率</p>
-                        <p className="text-2xl font-bold">
+                        <p className="text-xs label-caps text-muted-foreground mb-1">回答率</p>
+                        <p className="text-3xl font-bold text-primary">
                             {total > 0 ? (((total - data.unanswered) / total) * 100).toFixed(1) : 0}%
                         </p>
                     </div>
@@ -141,25 +144,33 @@ export function AttendanceChart({ data, title = "出欠状況" }: AttendanceChar
  */
 export function AttendanceRateChart({ data, title = "メンバー出欠率" }: AttendanceRateChartProps) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
+        <Card className="shadow-sm border-0 overflow-hidden">
+            <CardHeader className="bg-muted/30">
+                <CardTitle className="section-title">{title}</CardTitle>
                 <CardDescription>各メンバーの出欠率を比較</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
+                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                         <XAxis
                             dataKey="name"
                             angle={-45}
                             textAnchor="end"
                             height={100}
                             tick={{ fontSize: 12 }}
+                            axisLine={false}
+                            tickLine={false}
                         />
-                        <YAxis />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="rate" fill={COLORS.attended} name="出欠率" />
+                        <YAxis axisLine={false} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+                        <Bar
+                            dataKey="rate"
+                            fill={COLORS.attended}
+                            name="出欠率"
+                            radius={[4, 4, 0, 0]}
+                            barSize={32}
+                        />
                     </BarChart>
                 </ResponsiveContainer>
             </CardContent>
@@ -224,19 +235,19 @@ interface DetailedStatsProps {
 
 export function DetailedStatistics({ title, stats }: DetailedStatsProps) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
+        <Card className="shadow-sm border-0 overflow-hidden">
+            <CardHeader className="bg-muted/30">
+                <CardTitle className="section-title">{title}</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     {stats.map((stat, index) => (
-                        <div key={index} className="p-4 rounded-lg bg-muted">
-                            <div className="flex items-center gap-2 mb-2">
-                                {stat.icon && <div className="text-muted-foreground">{stat.icon}</div>}
-                                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                        <div key={index} className="p-5 rounded-2xl bg-muted/40 card-hover transition-all">
+                            <div className="flex items-center gap-3 mb-3">
+                                {stat.icon && <div className="text-primary">{stat.icon}</div>}
+                                <p className="text-xs label-caps text-muted-foreground">{stat.label}</p>
                             </div>
-                            <p className="text-2xl font-bold" style={{ color: stat.color }}>
+                            <p className="text-3xl font-bold tracking-tight" style={{ color: stat.color }}>
                                 {stat.value}
                             </p>
                         </div>
@@ -273,77 +284,86 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
     const responseCount = statistics.attended + statistics.delayed + statistics.absent;
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <div className="flex items-start justify-between">
+        <Card className="w-full shadow-sm border-0 overflow-hidden">
+            <CardHeader className="bg-muted/30">
+                <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                        <CardTitle className="text-xl">{event.title}</CardTitle>
-                        <CardDescription className="mt-2">
+                        <CardTitle className="section-title text-xl">{event.title}</CardTitle>
+                        <CardDescription className="mt-1 flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
                             {format(new Date(event.dateTime), "yyyy年MM月dd日 HH:mm", { locale: ja })}
                         </CardDescription>
                     </div>
-                    <Badge variant="outline">{event.type}</Badge>
+                    <Badge variant="secondary" className="font-normal shrink-0">{event.type}</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">詳細情報</h4>
-                        <div className="space-y-2 text-sm">
-                            <p>
-                                <span className="font-medium">回答期限:</span>{" "}
-                                {format(new Date(event.deadline), "yyyy年MM月dd日 HH:mm", { locale: ja })}
-                            </p>
-                            <p>
-                                <span className="font-medium">作成者:</span> {event.createdBy}
-                            </p>
+            <CardContent className="space-y-8 pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <h4 className="text-xs label-caps text-muted-foreground flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5" />
+                            詳細情報
+                        </h4>
+                        <div className="space-y-3 bg-muted/20 p-4 rounded-xl text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">回答期限</span>
+                                <span className="font-medium">{format(new Date(event.deadline), "MM/dd HH:mm", { locale: ja })}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">作成者</span>
+                                <span className="font-medium">{event.createdBy}</span>
+                            </div>
                             {event.description && (
-                                <p>
-                                    <span className="font-medium">説明:</span> {event.description}
-                                </p>
+                                <div className="pt-2 mt-2 border-t border-border/50">
+                                    <span className="text-muted-foreground block mb-1">説明</span>
+                                    <p className="text-foreground leading-relaxed">{event.description}</p>
+                                </div>
                             )}
                         </div>
                     </div>
-                    <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">回答状況</h4>
-                        <div className="space-y-2 text-sm">
-                            <p>
-                                <span className="inline-block w-20">参加:</span>
-                                <Badge variant="secondary">{statistics.attended}人</Badge>
-                            </p>
-                            <p>
-                                <span className="inline-block w-20">遅刻:</span>
-                                <Badge variant="secondary">{statistics.delayed}人</Badge>
-                            </p>
-                            <p>
-                                <span className="inline-block w-20">不参加:</span>
-                                <Badge variant="secondary">{statistics.absent}人</Badge>
-                            </p>
-                            <p>
-                                <span className="inline-block w-20">未回答:</span>
-                                <Badge variant="secondary">{statistics.unanswered}人</Badge>
-                            </p>
+                    <div className="space-y-4">
+                        <h4 className="text-xs label-caps text-muted-foreground flex items-center gap-2">
+                            <ClipboardCheck className="w-3.5 h-3.5" />
+                            回答状況
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                                <span className="text-xs text-emerald-700 dark:text-emerald-400 block mb-1">参加</span>
+                                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{statistics.attended}人</span>
+                            </div>
+                            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-100 dark:border-amber-900/50">
+                                <span className="text-xs text-amber-700 dark:text-amber-400 block mb-1">遅刻</span>
+                                <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{statistics.delayed}人</span>
+                            </div>
+                            <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50">
+                                <span className="text-xs text-rose-700 dark:text-rose-400 block mb-1">不参加</span>
+                                <span className="text-xl font-bold text-rose-600 dark:text-rose-400">{statistics.absent}人</span>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                <span className="text-xs text-slate-500 block mb-1">未回答</span>
+                                <span className="text-xl font-bold text-slate-500">{statistics.unanswered}人</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-4 border-t">
+                <div className="pt-6 border-t border-border/50">
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center">
-                            <p className="text-sm text-muted-foreground">回答率</p>
-                            <p className="text-2xl font-bold">
+                        <div className="text-center p-4 bg-primary/5 rounded-2xl">
+                            <p className="text-xs label-caps text-muted-foreground mb-1">回答率</p>
+                            <p className="text-2xl font-bold text-primary">
                                 {total > 0 ? ((responseCount / total) * 100).toFixed(1) : 0}%
                             </p>
                         </div>
-                        <div className="text-center">
-                            <p className="text-sm text-muted-foreground">参加率</p>
-                            <p className="text-2xl font-bold">
+                        <div className="text-center p-4 bg-emerald-500/5 rounded-2xl">
+                            <p className="text-xs label-caps text-muted-foreground mb-1">出席率</p>
+                            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                                 {responseCount > 0 ? (((statistics.attended + statistics.delayed) / responseCount) * 100).toFixed(1) : 0}%
                             </p>
                         </div>
-                        <div className="text-center">
-                            <p className="text-sm text-muted-foreground">不参加率</p>
-                            <p className="text-2xl font-bold">
+                        <div className="text-center p-4 bg-rose-500/5 rounded-2xl">
+                            <p className="text-xs label-caps text-muted-foreground mb-1">不参加率</p>
+                            <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
                                 {responseCount > 0 ? ((statistics.absent / responseCount) * 100).toFixed(1) : 0}%
                             </p>
                         </div>

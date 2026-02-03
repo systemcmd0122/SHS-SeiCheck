@@ -76,95 +76,99 @@ export function StatisticsPanel({ events, responses }: StatisticsProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-fade-in">
             {/* ヘッダー */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <TrendingUp className="w-6 h-6" />
+                    <h2 className="text-2xl font-bold flex items-center gap-2 section-title">
+                        <TrendingUp className="w-6 h-6 text-primary" />
                         統計・レポート
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">出欠状況の分析と可視化</p>
                 </div>
-                <Button onClick={exportToCSV} className="gap-2">
+                <Button onClick={exportToCSV} className="gap-2 rounded-xl shadow-sm">
                     <Download className="w-4 h-4" />
                     CSV エクスポート
                 </Button>
             </div>
 
             {/* 全体統計 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {events.slice(-1).map((lastEvent) => {
-                    const lastEventResponses = responses.filter((r) => r.eventId === lastEvent.id);
-                    const { rate, attended, absent, late, unanswered } = calculateAttendanceRate(
-                        lastEventResponses,
-                        members.length
-                    );
+            {events.length > 0 && (() => {
+                const lastEvent = events[events.length - 1];
+                const lastEventResponses = responses.filter((r) => r.eventId === lastEvent.id);
+                const { rate, attended, absent, late, unanswered } = calculateAttendanceRate(
+                    lastEventResponses,
+                    members.length
+                );
 
-                    return (
-                        <div key={lastEvent.id}>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">参加率</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{rate}%</div>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {attended}/{members.length}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Card className="border-0 shadow-sm card-hover bg-primary/5">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold label-caps text-muted-foreground">参加率</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-primary">{rate}%</div>
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                    {attended}/{members.length} 人
+                                </p>
+                            </CardContent>
+                        </Card>
 
-                            <Card className="mt-4">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">参加</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">{attended}</div>
-                                </CardContent>
-                            </Card>
+                        <Card className="border-0 shadow-sm card-hover bg-emerald-50/50 dark:bg-emerald-950/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold label-caps text-muted-foreground">参加</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{attended}</div>
+                                <p className="text-[10px] text-muted-foreground mt-1 text-emerald-600/70">参加予定</p>
+                            </CardContent>
+                        </Card>
 
-                            <Card className="mt-4">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">不参加</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">{absent}</div>
-                                </CardContent>
-                            </Card>
+                        <Card className="border-0 shadow-sm card-hover bg-rose-50/50 dark:bg-rose-950/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold label-caps text-muted-foreground">不参加</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">{absent}</div>
+                                <p className="text-[10px] text-muted-foreground mt-1 text-rose-600/70">不参加</p>
+                            </CardContent>
+                        </Card>
 
-                            <Card className="mt-4">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">遅れる</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{late}</div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    );
-                })}
-            </div>
+                        <Card className="border-0 shadow-sm card-hover bg-amber-50/50 dark:bg-amber-950/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold label-caps text-muted-foreground">遅れる</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{late}</div>
+                                <p className="text-[10px] text-muted-foreground mt-1 text-amber-600/70">遅刻予定</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                );
+            })()}
 
             {/* 棒グラフ */}
             {chartData.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>出欠人数の推移</CardTitle>
+                <Card className="border-0 shadow-sm overflow-hidden">
+                    <CardHeader className="bg-muted/30">
+                        <CardTitle className="section-title">出欠人数の推移</CardTitle>
                         <CardDescription>最新10件の予定の出欠状況</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         <ResponsiveContainer width="100%" height={400}>
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="title" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="attended" fill="#22c55e" name="参加" />
-                                <Bar dataKey="absent" fill="#ef4444" name="不参加" />
-                                <Bar dataKey="late" fill="#f97316" name="遅れる" />
-                                <Bar dataKey="unanswered" fill="#d1d5db" name="未回答" />
+                            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                                <XAxis dataKey="title" tick={{ fontSize: 10 }} />
+                                <YAxis tick={{ fontSize: 10 }} />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Legend iconType="circle" />
+                                <Bar dataKey="attended" fill="#10b981" name="参加" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="absent" fill="#f43f5e" name="不参加" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="late" fill="#f59e0b" name="遅れる" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="unanswered" fill="#94a3b8" name="未回答" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>

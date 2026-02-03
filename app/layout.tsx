@@ -109,11 +109,6 @@ export default function RootLayout({
           <OfflineIndicator />
         </ThemeProvider>
 
-        {/* 遅延読み込みスクリプト */}
-        <Script
-          src="https://cdn.jsdelivr.net/npm/pwa-asset-generator@6.2.0/dist/pwa-asset-generator.js"
-          strategy="lazyOnload"
-        />
       </body>
     </html>
   );

@@ -155,10 +155,10 @@ export default function TeacherPage() {
     // すべてのデータを読み込む
     const loadAllData = async () => {
         try {
-            const [eventsData, responsesData, announcementsData, googleEventsResponse] = await Promise.all([
+            const [eventsData, responsesData, announcementsResponse, googleEventsResponse] = await Promise.all([
                 getAllEvents(),
                 getAllResponses(),
-                getAllAnnouncements(),
+                fetch("/api/announcements").then((res) => res.json()),
                 fetch("/api/google-calendar/events").then((res) => res.json()).catch((err) => {
                     console.error("Failed to fetch Google Calendar events:", err);
                     return { success: false, data: [] };
@@ -167,7 +167,14 @@ export default function TeacherPage() {
 
             setEvents(eventsData.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()));
             setResponses(responsesData);
-            setAnnouncements(announcementsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+
+            if (announcementsResponse && announcementsResponse.success) {
+                setAnnouncements(announcementsResponse.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            } else {
+                // APIが失敗した場合は直接DBから取得を試みる
+                const announcementsData = await getAllAnnouncements();
+                setAnnouncements(announcementsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
 
             // Googleカレンダーイベントの処理
             if (googleEventsResponse && googleEventsResponse.success && Array.isArray(googleEventsResponse.data)) {
@@ -203,37 +210,44 @@ export default function TeacherPage() {
             return;
         }
 
-        const newAnnouncement: Announcement = {
-            id: `announcement_${Date.now()}`,
-            title: announcementTitle.trim(),
-            content: announcementContent.trim(),
-            priority: announcementPriority,
-            createdAt: new Date().toISOString(),
-            createdBy: teacherInfo.name,
-            isTeacher: true,
-        };
-
-        // ローカルで表示を更新
-        setAnnouncements([newAnnouncement, ...announcements]);
-        setAnnouncementTitle("");
-        setAnnouncementContent("");
-        setAnnouncementPriority("通常");
-        setShowAnnouncementDialog(false);
-
-        // Firestoreに保存する処理（オプション）
         try {
             const response = await fetch("/api/announcements", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newAnnouncement),
+                body: JSON.stringify({
+                    title: announcementTitle.trim(),
+                    content: announcementContent.trim(),
+                    priority: announcementPriority,
+                    createdBy: teacherInfo.name,
+                    isTeacher: true,
+                }),
             });
+
             if (!response.ok) {
-                throw new Error("Failed to post announcement");
+                const errorData = await response.json();
+                throw new Error(errorData.error || "お知らせの投稿に失敗しました");
             }
+
+            // 投稿成功時に最新のお知らせ一覧を再読み込み（APIを使用）
+            const refreshResponse = await fetch("/api/announcements");
+            const refreshData = await refreshResponse.json();
+            if (refreshData && refreshData.success) {
+                setAnnouncements(refreshData.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            } else {
+                // フォールバック
+                const announcementsData = await getAllAnnouncements();
+                setAnnouncements(announcementsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
+
+            setAnnouncementTitle("");
+            setAnnouncementContent("");
+            setAnnouncementPriority("通常");
+            setShowAnnouncementDialog(false);
+            alert("お知らせを投稿しました");
         } catch (error) {
             console.error("Error posting announcement:", error);
             const errorMessage = getErrorMessage(error);
-            console.warn("お知らせの保存に失敗しました（ローカルには保存済み）: " + errorMessage);
+            alert("お知らせの投稿に失敗しました: " + errorMessage);
         }
     };
 

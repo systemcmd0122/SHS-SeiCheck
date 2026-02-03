@@ -63,8 +63,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ローカルホスト以外のリクエストはスキップ
-    if (!url.origin.includes('localhost') && !url.origin.includes('192.168')) {
+    // 同一オリジン以外のリクエスト（外部API等）かつナビゲーション以外はスキップ
+    // ローカル開発環境以外でも動作するように self.location.origin を使用
+    if (url.origin !== self.location.origin) {
         if (request.mode !== 'navigate') {
             return;
         }
@@ -253,5 +254,3 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
-
-

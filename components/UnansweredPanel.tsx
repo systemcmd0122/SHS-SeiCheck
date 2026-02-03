@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { members } from "@/lib/members";
 import { getSharedResponsesForEvent } from "@/lib/db";
 import type { Event, Response, Member } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface UnansweredPanelProps {
     event: Event;
@@ -141,42 +142,60 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
 
     if (!hasUnanswered) {
         return (
-            <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
-                <CardHeader>
-                    <CardTitle className="text-green-700 dark:text-green-400 flex items-center gap-2">
-                        <Check className="w-5 h-5" />
+            <Card className="border-0 bg-emerald-500/10 dark:bg-emerald-500/5 shadow-sm overflow-hidden">
+                <CardHeader className="py-4">
+                    <CardTitle className="text-emerald-700 dark:text-emerald-400 flex items-center gap-2 text-base font-bold">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <Check className="w-4 h-4" />
+                        </div>
                         全員が回答しました
                     </CardTitle>
-                    <CardDescription>すべてのメンバーから回答を受け取っています</CardDescription>
+                    <CardDescription className="text-emerald-600/70 dark:text-emerald-400/70 ml-10">すべてのメンバーから回答を受け取っています</CardDescription>
                 </CardHeader>
             </Card>
         );
     }
 
     return (
-        <Card className={isOverdue ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950" : "border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950"}>
-            <CardHeader>
-                <CardTitle className={isOverdue ? "text-red-700 dark:text-red-400" : "text-yellow-700 dark:text-yellow-400"} >
-                    <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5" />
-                        未回答者がいます
+        <Card className={cn(
+            "border-0 shadow-sm overflow-hidden",
+            isOverdue 
+                ? "bg-rose-500/10 dark:bg-rose-500/5" 
+                : "bg-amber-500/10 dark:bg-amber-500/5"
+        )}>
+            <CardHeader className="py-4">
+                <CardTitle className={cn(
+                    "flex items-center gap-2 text-base font-bold",
+                    isOverdue ? "text-rose-700 dark:text-rose-400" : "text-amber-700 dark:text-amber-400"
+                )}>
+                    <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center",
+                        isOverdue ? "bg-rose-500/20" : "bg-amber-500/20"
+                    )}>
+                        <AlertTriangle className="w-4 h-4" />
                     </div>
+                    未回答者がいます
                 </CardTitle>
-                <CardDescription>
-                    {unansweredMembers.length}人のメンバーからまだ回答を受け取っていません
+                <CardDescription className={cn(
+                    "ml-10",
+                    isOverdue ? "text-rose-600/70 dark:text-rose-400/70" : "text-amber-600/70 dark:text-amber-400/70"
+                )}>
+                    {unansweredMembers.length}人のメンバーが未回答です
                     {isOverdue && " （締切超過）"}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 pt-0">
                 {/* 未回答者一覧 */}
-                <div className="space-y-2">
-                    <h4 className="font-medium text-sm">未回答者一覧:</h4>
-                    <div className="flex flex-wrap gap-2">
+                <div className="ml-10 space-y-2">
+                    <div className="flex flex-wrap gap-1.5">
                         {unansweredMembers.map((member) => (
                             <Badge
                                 key={member.id}
-                                variant={isOverdue ? "destructive" : "secondary"}
-                                className="text-xs"
+                                variant="outline"
+                                className={cn(
+                                    "text-[10px] font-normal rounded-lg bg-card/50",
+                                    isOverdue ? "border-rose-200 text-rose-700" : "border-amber-200 text-amber-700"
+                                )}
                             >
                                 {member.name}
                             </Badge>
@@ -185,14 +204,20 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                 </div>
 
                 {/* 共有リンク機能 */}
-                <Button
-                    className="w-full"
-                    variant={isOverdue ? "destructive" : "default"}
-                    onClick={handleGenerateShareLink}
-                >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    共有リンクで回答を促す
-                </Button>
+                <div className="ml-10">
+                    <Button
+                        className={cn(
+                            "w-full rounded-xl shadow-sm h-10 font-bold text-xs transition-all",
+                            isOverdue 
+                                ? "bg-rose-600 hover:bg-rose-700 text-white" 
+                                : "bg-amber-600 hover:bg-amber-700 text-white"
+                        )}
+                        onClick={handleGenerateShareLink}
+                    >
+                        <Share2 className="w-3.5 h-3.5 mr-2" />
+                        共有リンクで回答を促す
+                    </Button>
+                </div>
 
                 <ShareLinkDialog
                     isOpen={isShareDialogOpen}

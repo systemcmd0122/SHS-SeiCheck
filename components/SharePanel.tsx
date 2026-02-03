@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Share2, Copy, Trash2, Link as LinkIcon, MessageCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Share2, Copy, Trash2, Link as LinkIcon, MessageCircle, Clock } from "lucide-react";
 import type { Event, SharedResponse } from "@/lib/types";
 import { getSharedResponsesForEvent, createSharedResponse, deleteSharedResponse } from "@/lib/db";
 
@@ -187,19 +188,19 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-fade-in">
             {/* ヘッダー */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <Share2 className="w-6 h-6" />
+                    <h2 className="text-2xl font-bold flex items-center gap-2 section-title">
+                        <Share2 className="w-6 h-6 text-primary" />
                         共有リンク
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
                         このイベントへの回答フォームを共有できます
                     </p>
                 </div>
-                <Button onClick={handleCreateShare} disabled={isCreatingShare} className="gap-2">
+                <Button onClick={handleCreateShare} disabled={isCreatingShare} className="gap-2 rounded-xl shadow-md">
                     <LinkIcon className="w-4 h-4" />
                     新しいリンクを生成
                 </Button>
@@ -207,75 +208,79 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
 
             {/* 共有リンク一覧 */}
             {shares.length === 0 ? (
-                <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <Share2 className="w-12 h-12 text-muted-foreground mb-4" />
-                        <p className="text-muted-foreground text-center">
+                <Card className="border-2 border-dashed border-muted bg-muted/20">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                            <Share2 className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground text-center font-medium">
                             まだ共有リンクがありません。<br />
-                            新しいリンクを生成して共有を開始してください。
+                            <span className="text-xs font-normal opacity-70">新しいリンクを生成して共有を開始してください。</span>
                         </p>
                     </CardContent>
                 </Card>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {shares.map((share) => {
                         const shareUrl = `${window.location.origin}/share/${share.shareToken}`;
                         return (
-                            <Card key={share.id}>
-                                <CardContent className="pt-6">
-                                    <div className="space-y-4">
-                                        {/* メタ情報 */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-sm text-muted-foreground">
-                                                作成日: {format(new Date(share.createdAt), "yyyy年M月d日 HH:mm", { locale: ja })}
-                                            </div>
-                                            <Badge variant="outline">アクティブ</Badge>
+                            <Card key={share.id} className="border-0 shadow-sm overflow-hidden card-hover">
+                                <CardHeader className="bg-muted/30 py-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-[10px] label-caps text-muted-foreground flex items-center gap-1.5">
+                                            <Clock className="w-3 h-3" />
+                                            作成: {format(new Date(share.createdAt), "yyyy/MM/dd HH:mm", { locale: ja })}
                                         </div>
-
-                                        {/* URLコピー */}
+                                        <Badge variant="secondary" className="text-[10px] font-bold h-5 bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50">有効</Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-5 pb-5 space-y-5">
+                                    {/* URLコピー */}
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold label-caps text-muted-foreground text-primary/70">共有用URL</Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 value={shareUrl}
                                                 readOnly
-                                                className="font-mono text-sm"
+                                                className="font-mono text-xs bg-muted/30 border-dashed rounded-lg h-9"
                                             />
                                             <Button
                                                 size="sm"
                                                 variant={copiedToken === share.shareToken ? "default" : "outline"}
                                                 onClick={() => handleCopyShareLink(share.shareToken)}
-                                                className="gap-2"
+                                                className="gap-2 h-9 rounded-lg"
                                             >
-                                                <Copy className="w-4 h-4" />
-                                                {copiedToken === share.shareToken ? "コピー済" : "URL"}
+                                                <Copy className="w-3.5 h-3.5" />
+                                                <span className="text-xs font-bold">{copiedToken === share.shareToken ? "完了" : "コピー"}</span>
                                             </Button>
                                         </div>
+                                    </div>
 
-                                        {/* メッセージコピー */}
-                                        <div>
-                                            <p className="text-xs text-muted-foreground mb-2">LINE・メール等で共有するテンプレート</p>
-                                            <Button
-                                                size="sm"
-                                                variant={copiedMessage === share.shareToken ? "default" : "outline"}
-                                                onClick={() => handleCopyShareMessage(share.shareToken)}
-                                                className="w-full gap-2"
-                                            >
-                                                <MessageCircle className="w-4 h-4" />
-                                                {copiedMessage === share.shareToken ? "メッセージをコピー済" : "メッセージをコピー"}
-                                            </Button>
-                                        </div>
+                                    {/* メッセージコピー */}
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold label-caps text-muted-foreground text-primary/70">共有用テンプレート (LINE等)</Label>
+                                        <Button
+                                            size="sm"
+                                            variant={copiedMessage === share.shareToken ? "default" : "outline"}
+                                            onClick={() => handleCopyShareMessage(share.shareToken)}
+                                            className="w-full gap-2 h-10 rounded-xl font-bold transition-all"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            <span className="text-xs">{copiedMessage === share.shareToken ? "メッセージをコピーしました" : "テンプレートをコピー"}</span>
+                                        </Button>
+                                    </div>
 
-                                        {/* 削除ボタン */}
-                                        <div className="flex justify-end">
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                onClick={() => handleDeleteShare(share.id)}
-                                                className="gap-2"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                削除
-                                            </Button>
-                                        </div>
+                                    {/* 削除ボタン */}
+                                    <div className="flex justify-end pt-2 border-t border-border/50">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleDeleteShare(share.id)}
+                                            className="gap-2 h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span className="text-[10px] font-bold label-caps">リンクを削除</span>
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>

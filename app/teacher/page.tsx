@@ -15,6 +15,9 @@ import {
     BarChart3,
     LogOut,
     MessageSquare,
+    ClipboardCheck,
+    TrendingUp,
+    FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +73,7 @@ import type { Event, Response, EventType, Announcement, AnnouncementPriority } f
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { members } from "@/lib/members";
 import { successToast, errorToast } from "@/components/ui/toast-simple";
-import { clearAllSession, getErrorMessage } from "@/lib/utils";
+import { clearAllSession, getErrorMessage, cn } from "@/lib/utils";
 import {
     AttendanceChart,
     AttendanceRateChart,
@@ -332,113 +335,132 @@ export default function TeacherPage() {
 
     // ダッシュボードのレンダリング
     const renderOverview = () => (
-        <div className="space-y-6">
+        <div className="space-y-8 animate-fade-in">
             {/* カレンダー */}
-            <EventCalendar
-                events={events}
-                includeGoogleCalendar={true}
-                googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
-                highlightDates={events
-                    .filter((e) => {
-                        if (!e.dateTime) return false;
-                        const eventDate = new Date(e.dateTime);
-                        return !isNaN(eventDate.getTime()) && eventDate >= new Date();
-                    })
-                    .map((e) => {
-                        const d = new Date(e.dateTime);
-                        return format(d, "yyyy-MM-dd");
-                    })}
-            />
+            <div className="rounded-xl overflow-hidden shadow-sm border border-border">
+                <EventCalendar
+                    events={events}
+                    includeGoogleCalendar={true}
+                    googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+                    highlightDates={events
+                        .filter((e) => {
+                            if (!e.dateTime) return false;
+                            const eventDate = new Date(e.dateTime);
+                            return !isNaN(eventDate.getTime()) && eventDate >= new Date();
+                        })
+                        .map((e) => {
+                            const d = new Date(e.dateTime);
+                            return format(d, "yyyy-MM-dd");
+                        })}
+                />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">出欠確認予定数</CardTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="card-hover border-0 shadow-sm bg-blue-50/50 dark:bg-blue-950/20">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-medium label-caps">出欠確認予定数</CardTitle>
+                            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <div className="text-3xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
+                        <p className="text-xs text-muted-foreground mt-2">
                             今月: {events.filter((e) => {
                                 if (e.isAttendanceRequired === false) return false;
                                 const eventDate = new Date(e.dateTime);
                                 const now = new Date();
                                 return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
-                            }).length}
+                            }).length} 件
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">平均回答率</CardTitle>
+                <Card className="card-hover border-0 shadow-sm bg-emerald-50/50 dark:bg-emerald-950/20">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-medium label-caps">平均回答率</CardTitle>
+                            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-3xl font-bold">
                             {eventStats.length > 0 ? (eventStats.reduce((acc, stat) => acc + stat.responseRate, 0) / eventStats.length).toFixed(1) : 0}%
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">全予定での平均</p>
+                        <p className="text-xs text-muted-foreground mt-2">全予定での平均</p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">総メンバー数</CardTitle>
+                <Card className="card-hover border-0 shadow-sm bg-purple-50/50 dark:bg-purple-950/20">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-medium label-caps">総メンバー数</CardTitle>
+                            <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{members.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">生徒会メンバー</p>
+                        <div className="text-3xl font-bold">{members.length}</div>
+                        <p className="text-xs text-muted-foreground mt-2">生徒会メンバー</p>
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">お知らせ</CardTitle>
+                <Card className="card-hover border-0 shadow-sm bg-orange-50/50 dark:bg-orange-950/20">
+                    <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-medium label-caps">お知らせ</CardTitle>
+                            <Bell className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{announcements.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">全件表示</p>
+                        <div className="text-3xl font-bold">{announcements.length}</div>
+                        <p className="text-xs text-muted-foreground mt-2">全件表示</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card>
+            <Card className="shadow-sm border-0">
                 <CardHeader>
-                    <CardTitle>最近のイベント</CardTitle>
-                    <CardDescription>最新10件の予定と回答状況</CardDescription>
+                    <div className="flex items-center gap-2">
+                        <ClipboardCheck className="w-5 h-5 text-primary" />
+                        <div>
+                            <CardTitle className="section-title">最近のイベント</CardTitle>
+                            <CardDescription>最新10件の予定と回答状況</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
+                <CardContent className="p-0 sm:p-6">
+                    <div className="overflow-x-auto scrollbar-hide">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>予定名</TableHead>
-                                    <TableHead>種類</TableHead>
-                                    <TableHead>日時</TableHead>
-                                    <TableHead>参加</TableHead>
-                                    <TableHead>遅れ</TableHead>
-                                    <TableHead>不参加</TableHead>
-                                    <TableHead>未回答</TableHead>
-                                    <TableHead>回答率</TableHead>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="w-[200px] font-bold">予定名</TableHead>
+                                    <TableHead className="font-bold text-center">種類</TableHead>
+                                    <TableHead className="font-bold">日時</TableHead>
+                                    <TableHead className="text-center font-bold">参加</TableHead>
+                                    <TableHead className="text-center font-bold">遅れ</TableHead>
+                                    <TableHead className="text-center font-bold">不参加</TableHead>
+                                    <TableHead className="text-center font-bold">未回答</TableHead>
+                                    <TableHead className="font-bold">回答率</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {eventStats.slice(0, 10).map((stat) => (
-                                    <TableRow key={stat.eventId}>
-                                        <TableCell className="font-medium max-w-xs truncate">{stat.eventTitle}</TableCell>
-                                        <TableCell><Badge variant="outline">{stat.eventType}</Badge></TableCell>
-                                        <TableCell className="whitespace-nowrap">
-                                            {safeFormat(stat.eventDateTime, "yyyy年MM月dd日 HH:mm")}
+                                    <TableRow key={stat.eventId} className="hover:bg-muted/50 transition-colors">
+                                        <TableCell className="font-medium max-w-[200px] truncate">{stat.eventTitle}</TableCell>
+                                        <TableCell className="text-center"><Badge variant="secondary" className="font-normal">{stat.eventType}</Badge></TableCell>
+                                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                                            {safeFormat(stat.eventDateTime, "yyyy/MM/dd HH:mm")}
                                         </TableCell>
-                                        <TableCell><span className="font-semibold text-green-600">{stat.attended}</span></TableCell>
-                                        <TableCell><span className="font-semibold text-yellow-600">{stat.delayed}</span></TableCell>
-                                        <TableCell><span className="font-semibold text-red-600">{stat.absent}</span></TableCell>
-                                        <TableCell><span className="font-semibold text-gray-600">{stat.unanswered}</span></TableCell>
+                                        <TableCell className="text-center"><span className="font-semibold text-emerald-600">{stat.attended}</span></TableCell>
+                                        <TableCell className="text-center"><span className="font-semibold text-amber-600">{stat.delayed}</span></TableCell>
+                                        <TableCell className="text-center"><span className="font-semibold text-rose-600">{stat.absent}</span></TableCell>
+                                        <TableCell className="text-center"><span className="font-semibold text-slate-400">{stat.unanswered}</span></TableCell>
                                         <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-16 bg-muted rounded-full h-2">
-                                                    <div className="bg-primary h-2 rounded-full" style={{ width: `${stat.responseRate}%` }} />
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-16 bg-muted rounded-full h-1.5 overflow-hidden">
+                                                    <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${stat.responseRate}%` }} />
                                                 </div>
-                                                <span className="text-sm font-medium">{stat.responseRate.toFixed(1)}%</span>
+                                                <span className="text-xs font-bold w-9">{stat.responseRate.toFixed(1)}%</span>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -453,9 +475,9 @@ export default function TeacherPage() {
 
     // イベント一覧のレンダリング
     const renderEvents = () => (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
+                <div className="flex-1 relative">
                     <Input
                         placeholder="予定名で検索..."
                         value={searchQuery}
@@ -463,14 +485,14 @@ export default function TeacherPage() {
                             setSearchQuery(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="w-full"
+                        className="w-full pl-4 rounded-xl border-border bg-card shadow-sm"
                     />
                 </div>
                 <Select value={eventFilter} onValueChange={(value) => {
                     setEventFilter(value as EventType | "all");
                     setCurrentPage(1);
                 }}>
-                    <SelectTrigger className="w-full md:w-40">
+                    <SelectTrigger className="w-full md:w-48 rounded-xl border-border bg-card shadow-sm">
                         <SelectValue placeholder="種類でフィルター" />
                     </SelectTrigger>
                     <SelectContent>
@@ -482,22 +504,27 @@ export default function TeacherPage() {
                 </Select>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>予定一覧</CardTitle>
-                    <CardDescription>全{filteredEvents.length}件中 {startIndex + 1}～{Math.min(startIndex + itemsPerPage, filteredEvents.length)}件表示</CardDescription>
+            <Card className="shadow-sm border-0">
+                <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <div>
+                            <CardTitle className="section-title">予定一覧</CardTitle>
+                            <CardDescription>全{filteredEvents.length}件中 {startIndex + 1}～{Math.min(startIndex + itemsPerPage, filteredEvents.length)}件表示</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
+                <CardContent className="p-0 sm:p-6">
+                    <div className="overflow-x-auto scrollbar-hide">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>予定名</TableHead>
-                                    <TableHead>種類</TableHead>
-                                    <TableHead>日時</TableHead>
-                                    <TableHead>回答期限</TableHead>
-                                    <TableHead>作成者</TableHead>
-                                    <TableHead>回答状況</TableHead>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="font-bold">予定名</TableHead>
+                                    <TableHead className="font-bold">種類</TableHead>
+                                    <TableHead className="font-bold">日時</TableHead>
+                                    <TableHead className="font-bold">回答期限</TableHead>
+                                    <TableHead className="font-bold">作成者</TableHead>
+                                    <TableHead className="font-bold">回答状況</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -506,22 +533,24 @@ export default function TeacherPage() {
                                     const isOverdue = new Date() > new Date(event.deadline);
 
                                     return (
-                                        <TableRow key={event.id}>
+                                        <TableRow key={event.id} className="hover:bg-muted/50 transition-colors">
                                             <TableCell className="font-medium max-w-xs truncate">{event.title}</TableCell>
-                                            <TableCell><Badge variant="outline">{event.type}</Badge></TableCell>
-                                            <TableCell className="whitespace-nowrap">
+                                            <TableCell><Badge variant="outline" className="font-normal">{event.type}</Badge></TableCell>
+                                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                                                 {safeFormat(event.dateTime, "MM/dd HH:mm")}
                                             </TableCell>
-                                            <TableCell className="whitespace-nowrap">
-                                                <span className={isOverdue ? "text-red-600 font-semibold" : ""}>
+                                            <TableCell className="whitespace-nowrap text-sm">
+                                                <span className={isOverdue ? "text-rose-600 font-bold" : "text-muted-foreground"}>
                                                     {safeFormat(event.deadline, "MM/dd HH:mm")}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>{event.createdBy}</TableCell>
+                                            <TableCell className="text-sm">{event.createdBy}</TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-1">
-                                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                                                    <span className="text-sm">{responseCount}/{members.length}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                                    </div>
+                                                    <span className="text-sm font-bold">{responseCount}/{members.length}</span>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -584,40 +613,45 @@ export default function TeacherPage() {
 
     // メンバー詳細のレンダリング
     const renderMembers = () => (
-        <Card>
+        <Card className="shadow-sm border-0 animate-fade-in">
             <CardHeader>
-                <CardTitle>メンバー出欠状況</CardTitle>
-                <CardDescription>各メンバーの出欠データ分析</CardDescription>
+                <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <div>
+                        <CardTitle className="section-title">メンバー出欠状況</CardTitle>
+                        <CardDescription>各メンバーの出欠データ分析</CardDescription>
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
+            <CardContent className="p-0 sm:p-6">
+                <div className="overflow-x-auto scrollbar-hide">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>メンバー名</TableHead>
-                                <TableHead>委員会</TableHead>
-                                <TableHead>参加</TableHead>
-                                <TableHead>遅刻</TableHead>
-                                <TableHead>不参加</TableHead>
-                                <TableHead>未回答</TableHead>
-                                <TableHead>出欠率</TableHead>
+                            <TableRow className="bg-muted/30">
+                                <TableHead className="font-bold">メンバー名</TableHead>
+                                <TableHead className="font-bold text-center">委員会</TableHead>
+                                <TableHead className="text-center font-bold">参加</TableHead>
+                                <TableHead className="text-center font-bold">遅刻</TableHead>
+                                <TableHead className="text-center font-bold">不参加</TableHead>
+                                <TableHead className="text-center font-bold">未回答</TableHead>
+                                <TableHead className="font-bold">出欠率</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {memberDetails.sort((a, b) => b.attendanceRate - a.attendanceRate).map((member) => (
-                                <TableRow key={member.id}>
+                                <TableRow key={member.id} className="hover:bg-muted/50 transition-colors">
                                     <TableCell className="font-medium">{member.name}</TableCell>
-                                    <TableCell>{member.committee}</TableCell>
-                                    <TableCell><span className="font-semibold text-green-600">{member.attendanceCount}</span></TableCell>
-                                    <TableCell><span className="font-semibold text-yellow-600">{member.delayedCount}</span></TableCell>
-                                    <TableCell><span className="font-semibold text-red-600">{member.absentCount}</span></TableCell>
-                                    <TableCell><span className="font-semibold text-gray-600">{member.unansweredCount}</span></TableCell>
+                                    <TableCell className="text-center text-sm text-muted-foreground">{member.committee}</TableCell>
+                                    <TableCell className="text-center"><span className="font-semibold text-emerald-600">{member.attendanceCount}</span></TableCell>
+                                    <TableCell className="text-center"><span className="font-semibold text-amber-600">{member.delayedCount}</span></TableCell>
+                                    <TableCell className="text-center"><span className="font-semibold text-rose-600">{member.absentCount}</span></TableCell>
+                                    <TableCell className="text-center"><span className="font-semibold text-slate-400">{member.unansweredCount}</span></TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 bg-muted rounded-full h-2">
-                                                <div className="bg-primary h-2 rounded-full" style={{ width: `${member.attendanceRate}%` }} />
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-16 bg-muted rounded-full h-1.5 overflow-hidden">
+                                                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${member.attendanceRate}%` }} />
                                             </div>
-                                            <span className="text-sm font-medium">{member.attendanceRate.toFixed(1)}%</span>
+                                            <span className="text-xs font-bold w-9">{member.attendanceRate.toFixed(1)}%</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -644,50 +678,52 @@ export default function TeacherPage() {
         }));
 
         return (
-            <div className="space-y-6">
+            <div className="space-y-8 animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium">全体平均出欠率</CardTitle>
+                    <Card className="card-hover border-0 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium label-caps">全体平均出欠率</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-3xl font-bold text-primary">
                                 {memberDetails.length > 0 ? (memberDetails.reduce((acc, m) => acc + m.attendanceRate, 0) / memberDetails.length).toFixed(1) : 0}%
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">全メンバーの平均</p>
+                            <p className="text-xs text-muted-foreground mt-2">全メンバーの平均</p>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium">最高出欠率</CardTitle>
+                    <Card className="card-hover border-0 shadow-sm bg-emerald-50/30 dark:bg-emerald-950/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium label-caps">最高出欠率</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                                 {memberDetails.length > 0 ? Math.max(...memberDetails.map((m) => m.attendanceRate)).toFixed(1) : 0}%
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                <Users className="w-3 h-3" />
                                 {memberDetails.length > 0 ? memberDetails.find((m) => m.attendanceRate === Math.max(...memberDetails.map((m) => m.attendanceRate)))?.name : ""}
                             </p>
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium">最低出欠率</CardTitle>
+                    <Card className="card-hover border-0 shadow-sm bg-rose-50/30 dark:bg-rose-950/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium label-caps">最低出欠率</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
+                            <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">
                                 {memberDetails.length > 0 ? Math.min(...memberDetails.map((m) => m.attendanceRate)).toFixed(1) : 0}%
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                <Users className="w-3 h-3" />
                                 {memberDetails.length > 0 ? memberDetails.find((m) => m.attendanceRate === Math.min(...memberDetails.map((m) => m.attendanceRate)))?.name : ""}
                             </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <AttendanceChart data={attendanceChartData} title="全体出欠状況" />
                     <AttendanceRateChart data={attendanceRateData} title="メンバー出欠率比較" />
                 </div>
@@ -892,7 +928,7 @@ export default function TeacherPage() {
                 {/* サイドバー */}
                 <div className={`fixed inset-0 top-16 z-30 bg-background border-r border-border transition-transform md:relative md:translate-x-0 md:w-72 md:flex-shrink-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
                     }`}>
-                    <nav className="space-y-2 p-4 md:p-6 md:flex md:flex-col md:gap-2 h-full overflow-y-auto">
+                    <nav className="space-y-1 p-4 md:p-6 md:flex md:flex-col md:gap-1.5 h-full overflow-y-auto">
                         {[
                             { id: "overview", label: "ダッシュボード", icon: Home },
                             { id: "events", label: "予定一覧", icon: Calendar },
@@ -902,18 +938,24 @@ export default function TeacherPage() {
                             { id: "announcements", label: "お知らせ", icon: Bell },
                         ].map((item) => {
                             const Icon = item.icon;
+                            const isActive = activeTab === item.id;
                             return (
                                 <Button
                                     key={item.id}
-                                    variant={activeTab === item.id ? "default" : "ghost"}
-                                    className="w-full justify-start gap-2 md:w-auto"
+                                    variant={isActive ? "default" : "ghost"}
+                                    className={cn(
+                                        "w-full justify-start gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                                        isActive 
+                                            ? "shadow-md shadow-primary/20" 
+                                            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    )}
                                     onClick={() => {
                                         setActiveTab(item.id);
                                         setSidebarOpen(false);
                                     }}
                                 >
-                                    <Icon className="w-4 h-4" />
-                                    {item.label}
+                                    <Icon className={cn("w-5 h-5", isActive ? "animate-pulse" : "")} />
+                                    <span className="font-medium">{item.label}</span>
                                 </Button>
                             );
                         })}

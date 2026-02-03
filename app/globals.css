@@ -258,16 +258,12 @@
 
   /* サブタイトル・ラベルスタイル */
   .label-caps {
-    @apply text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60;
+    @apply text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60;
   }
 
   /* カードホバー効果 */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98];
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
   }
 }
 

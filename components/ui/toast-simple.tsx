@@ -25,6 +25,10 @@ export const errorToast = (title: string, description?: string) => toast(title, 
 export function Toaster() {
   const [messages, setMessages] = useState<ToastMessage[]>([]);
 
+  const removeMessage = useCallback((id: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+  }, []);
+
   const addMessage = useCallback((msg: Omit<ToastMessage, "id">) => {
     const id = Math.random().toString(36).substring(2, 9);
     setMessages((prev) => [...prev, { ...msg, id }]);
@@ -33,11 +37,7 @@ export function Toaster() {
     setTimeout(() => {
       removeMessage(id);
     }, 5000);
-  }, []);
-
-  const removeMessage = useCallback((id: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+  }, [removeMessage]);
 
   useEffect(() => {
     toastFn = addMessage;
@@ -46,35 +46,49 @@ export function Toaster() {
   if (messages.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 w-full max-w-[400px] pointer-events-none p-4">
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-3 w-full max-w-[420px] pointer-events-none p-4">
       {messages.map((msg) => (
         <div
           key={msg.id}
-          className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg animate-in slide-in-from-right-full transition-all bg-background ${
+          className={`pointer-events-auto flex items-start gap-4 p-5 rounded-[1.5rem] border shadow-premium animate-in slide-in-from-right-10 fade-in duration-300 transition-all backdrop-blur-xl ${
             msg.type === "success"
-              ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/50 dark:border-emerald-900"
+              ? "border-emerald-500/20 bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-50"
               : msg.type === "error"
-              ? "border-rose-200 bg-rose-50 dark:bg-rose-950/50 dark:border-rose-900"
+              ? "border-rose-500/20 bg-rose-50/95 dark:bg-rose-950/90 text-rose-900 dark:text-rose-50"
               : msg.type === "warning"
-              ? "border-amber-200 bg-amber-50 dark:bg-amber-950/50 dark:border-amber-900"
-              : "border-blue-200 bg-blue-50 dark:bg-blue-950/50 dark:border-blue-900"
+              ? "border-amber-500/20 bg-amber-50/95 dark:bg-amber-950/90 text-amber-900 dark:text-amber-50"
+              : "border-primary/20 bg-background/95 dark:bg-card/90"
           }`}
         >
-          <div className="shrink-0 mt-0.5">
+          <div className={`shrink-0 p-2 rounded-2xl ${
+             msg.type === "success" ? "bg-emerald-500/10" :
+             msg.type === "error" ? "bg-rose-500/10" :
+             msg.type === "warning" ? "bg-amber-500/10" : "bg-primary/10"
+          }`}>
             {msg.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
             {msg.type === "error" && <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />}
             {msg.type === "warning" && <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
-            {msg.type === "info" && <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+            {msg.type === "info" && <Info className="w-5 h-5 text-primary" />}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{msg.title}</p>
-            {msg.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{msg.description}</p>}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="text-base font-black tracking-tight">{msg.title}</p>
+            {msg.description && (
+              <div className="mt-1.5 space-y-1">
+                <p className="text-sm opacity-80 leading-relaxed">{msg.description}</p>
+                {msg.type === "error" && (
+                  <p className="text-[11px] font-bold uppercase tracking-wider opacity-60 flex items-center gap-1.5 mt-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    ネットワークを確認して再度お試しください
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <button
             onClick={() => removeMessage(msg.id)}
-            className="shrink-0 p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="shrink-0 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors active-scale"
           >
-            <X className="w-4 h-4 text-muted-foreground" />
+            <X className="w-4 h-4 opacity-40" />
           </button>
         </div>
       ))}

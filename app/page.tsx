@@ -3,15 +3,26 @@
 import { useState, useEffect } from "react";
 import { MemberSelectionPage } from "@/components/MemberSelectionPage";
 
+interface Event {
+  id: string;
+  title: string;
+  type: string;
+  dateTime?: string;
+  startTime?: string;
+  [key: string]: unknown;
+}
+
 export default function Home() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isEventsLoading, setIsEventsLoading] = useState(true);
 
   useEffect(() => {
     const loadEvents = async () => {
+      setIsEventsLoading(true);
       try {
         // Firestoreのイベントを取得
         const dbResponse = await fetch("/api/events");
-        let dbEvents: any[] = [];
+        let dbEvents: Event[] = [];
         if (dbResponse.ok) {
           const dbData = await dbResponse.json();
           if (dbData.success && Array.isArray(dbData.data)) {
@@ -21,7 +32,7 @@ export default function Home() {
 
         // Google Calendarのイベントを取得
         const gcResponse = await fetch("/api/google-calendar/events");
-        let gcEvents: any[] = [];
+        let gcEvents: Event[] = [];
         if (gcResponse.ok) {
           const gcData = await gcResponse.json();
           if (gcData.success && Array.isArray(gcData.data)) {
@@ -37,6 +48,8 @@ export default function Home() {
       } catch (error) {
         console.warn("Failed to load events:", error);
         // APIが存在しない場合は空配列で続行
+      } finally {
+        setIsEventsLoading(false);
       }
     };
 
@@ -50,6 +63,7 @@ export default function Home() {
       buttonLabel="ログイン"
       showAdminButton={true}
       events={events}
+      isEventsLoading={isEventsLoading}
     />
   );
 }

@@ -5,13 +5,24 @@ import { ja } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ChevronRight } from "lucide-react";
+import { EventListSkeleton } from "./Loading";
 
-interface TodayEventsListProps {
-    events: any[];
-    onEventClick?: (event: any) => void;
+interface Event {
+    id: string;
+    title: string;
+    type: string;
+    dateTime?: string;
+    startTime?: string;
+    [key: string]: unknown;
 }
 
-export function TodayEventsList({ events, onEventClick }: TodayEventsListProps) {
+interface TodayEventsListProps {
+    events: Event[];
+    onEventClick?: (event: Event) => void;
+    isLoading?: boolean;
+}
+
+export function TodayEventsList({ events, onEventClick, isLoading }: TodayEventsListProps) {
     const today = new Date();
     const todayEvents = events.filter((e) => {
         try {
@@ -24,8 +35,8 @@ export function TodayEventsList({ events, onEventClick }: TodayEventsListProps) 
             return false;
         }
     }).sort((a, b) => {
-        const aTime = a.dateTime || a.startTime;
-        const bTime = b.dateTime || b.startTime;
+        const aTime = a.dateTime || a.startTime || "";
+        const bTime = b.dateTime || b.startTime || "";
         return new Date(aTime).getTime() - new Date(bTime).getTime();
     });
 
@@ -44,7 +55,9 @@ export function TodayEventsList({ events, onEventClick }: TodayEventsListProps) 
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {todayEvents.length === 0 ? (
+                {isLoading ? (
+                    <EventListSkeleton />
+                ) : todayEvents.length === 0 ? (
                     <div className="py-10 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
                         <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">今日の予定はありません</p>
                     </div>

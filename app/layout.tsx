@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SwRegister } from "./sw-register";
 import { CacheClearer } from "./cache-clearer";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PwaUpdateToast } from "@/components/PwaUpdateToast";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { Toaster } from "@/components/ui/toast-simple";
 
 const geistSans = Geist({
@@ -109,6 +111,8 @@ export default function RootLayout({
           <SwRegister />
           <CacheClearer />
           <OfflineIndicator />
+          <PwaUpdateToast />
+          <PwaInstallBanner />
         </ThemeProvider>
 
       </body>

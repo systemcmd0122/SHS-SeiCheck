@@ -1,256 +1,158 @@
-const CACHE_NAME = 'shs-sei-check-v1';
-const RUNTIME_CACHE = 'shs-sei-check-runtime';
-const ASSETS_CACHE = 'shs-sei-check-assets';
-const CHUNK_CACHE = 'shs-sei-check-chunks'; // チャンクキャッシュを分離
+const CACHE_VERSION = 'v20240320-1'; // バージョン管理
+const CACHE_PREFIX = 'shs-sei-check';
+
+const CACHE_NAMES = {
+  PRECACHE: `${CACHE_PREFIX}-precache-${CACHE_VERSION}`,
+  RUNTIME: `${CACHE_PREFIX}-runtime-${CACHE_VERSION}`,
+  STATIC: `${CACHE_PREFIX}-static-${CACHE_VERSION}`,
+  IMAGES: `${CACHE_PREFIX}-images-${CACHE_VERSION}`,
+};
+
+// プリキャッシュするアセット
+const PRECACHE_ASSETS = [
+  '/',
+  '/offline',
+  '/manifest.json',
+  '/favicon.ico',
+  '/icon.png',
+  '/offline.png',
+];
 
 // 開発環境判定
 const isDevelopment = self.location.origin.includes('localhost') || self.location.origin.includes('192.168');
 
-console.log('[SW] Environment:', isDevelopment ? 'Development' : 'Production');
-
-// インストールイベント
+// --- Install Event ---
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing Service Worker');
-    event.waitUntil(
-        Promise.all([
-            caches.open(CACHE_NAME).then((cache) => {
-                return cache.addAll(['/manifest.json', '/']).catch((err) => {
-                    console.log('Cache error:', err);
-                });
-            }),
-            caches.open(ASSETS_CACHE).then((cache) => {
-                return cache.addAll([]).catch((err) => {
-                    console.log('Assets cache error:', err);
-                });
-            }),
-            caches.open(CHUNK_CACHE).then((cache) => {
-                return cache.addAll([]).catch((err) => {
-                    console.log('Chunk cache error:', err);
-                });
-            })
-        ])
-    );
-    self.skipWaiting();
+  console.log('[SW] Install');
+  event.waitUntil(
+    caches.open(CACHE_NAMES.PRECACHE).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS);
+    }).then(() => self.skipWaiting())
+  );
 });
 
-// アクティベーションイベント
+// --- Activate Event ---
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating Service Worker');
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames
-                    .filter((cacheName) =>
-                        !cacheName.includes('shs-sei-check')
-                    )
-                    .map((cacheName) => {
-                        console.log('Delete old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    })
-            );
-        })
-    );
-    self.clients.claim();
+  console.log('[SW] Activate');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name.startsWith(CACHE_PREFIX) && !Object.values(CACHE_NAMES).includes(name))
+          .map((name) => {
+            console.log('[SW] Deleting old cache:', name);
+            return caches.delete(name);
+          })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
-// フェッチイベント
+// --- Fetch Event ---
 self.addEventListener('fetch', (event) => {
-    const { request } = event;
-    const url = new URL(request.url);
+  const { request } = event;
+  const url = new URL(request.url);
 
-    // サポートされていないメソッドはスキップ
-    if (request.method !== 'GET') {
-        return;
-    }
+  // GETリクエスト以外は無視
+  if (request.method !== 'GET') return;
 
-    // 同一オリジン以外のリクエスト（外部API等）かつナビゲーション以外はスキップ
-    // ローカル開発環境以外でも動作するように self.location.origin を使用
-    if (url.origin !== self.location.origin) {
-        if (request.mode !== 'navigate') {
-            return;
-        }
-    }
+  // 同一オリジン以外のリクエスト（外部API等）かつナビゲーション以外はスキップ
+  if (url.origin !== self.location.origin && request.mode !== 'navigate') {
+    return;
+  }
 
-    // favicon等のリソースはスキップ
-    if (url.pathname.includes('favicon') || url.pathname.includes('.ico')) {
-        event.respondWith(fetch(request).catch(() => new Response('', { status: 404 })));
-        return;
-    }
-
-    // HTMLページ（navigate）はネットワーク優先
-    if (request.mode === 'navigate') {
-        if (isDevelopment) {
-            event.respondWith(
-                fetch(request, { cache: 'no-store' })
-                    .then((response) => {
-                        console.log('[SW] Navigate (dev):', url.pathname, response.status);
-                        return response;
-                    })
-                    .catch((error) => {
-                        console.log('[SW] Navigate offline:', url.pathname);
-                        return caches.match(request).then((response) => {
-                            return response || new Response('オフラインです', { status: 503 });
-                        });
-                    })
-            );
-        } else {
-            event.respondWith(
-                fetch(request)
-                    .then((response) => {
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(RUNTIME_CACHE).then((cache) => {
-                                cache.put(request, responseToCache);
-                            });
-                        }
-                        return response;
-                    })
-                    .catch(() => {
-                        return caches.match(request).then((response) => {
-                            return response || new Response('オフラインです', { status: 503 });
-                        });
-                    })
-            );
-        }
-        return;
-    }
-
-    // API呼び出しはネットワーク優先、キャッシュフォールバック
-    if (url.pathname.startsWith('/api/')) {
-        if (isDevelopment) {
-            event.respondWith(
-                fetch(request, { priority: 'high', cache: 'no-store' })
-                    .then((response) => {
-                        console.log('[SW] API (dev):', url.pathname, response.status);
-                        return response;
-                    })
-                    .catch((error) => {
-                        console.log('[SW] API offline:', url.pathname);
-                        return caches.match(request) || new Response('オフラインです', { status: 503 });
-                    })
-            );
-        } else {
-            event.respondWith(
-                fetch(request, { priority: 'high' })
-                    .then((response) => {
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(RUNTIME_CACHE).then((cache) => {
-                                cache.put(request, responseToCache);
-                            });
-                        }
-                        return response;
-                    })
-                    .catch(() => {
-                        return caches.match(request) || new Response('オフラインです', { status: 503 });
-                    })
-            );
-        }
-        return;
-    }
-
-    // JS, CSS はキャッシュ優先、ネットワークフォールバック
-    if (url.pathname.match(/\.(js|css)$/)) {
-        if (isDevelopment) {
-            event.respondWith(
-                fetch(request, { priority: 'high', cache: 'no-store' })
-                    .then((response) => {
-                        console.log('[SW] Asset (dev):', url.pathname, response.status);
-                        return response;
-                    })
-                    .catch(() => {
-                        console.log('[SW] Asset offline:', url.pathname);
-                        return new Response('', { status: 404 });
-                    })
-            );
-        } else {
-            // チャンク（_next/static/chunks）と通常のJSを区別
-            const isChunk = url.pathname.includes('/_next/static/chunks/');
-            const cacheName = isChunk ? CHUNK_CACHE : ASSETS_CACHE;
-
-            event.respondWith(
-                fetch(request, { priority: 'high' })
-                    .then((response) => {
-                        // 成功したレスポンスのみキャッシュ
-                        if (response && response.status === 200) {
-                            const responseToCache = response.clone();
-                            caches.open(cacheName).then((cache) => {
-                                cache.put(request, responseToCache);
-                            });
-                        }
-                        return response;
-                    })
-                    .catch(() => {
-                        // ネットワークエラー時はキャッシュを試す
-                        return caches.match(request).then((cachedResponse) => {
-                            if (cachedResponse) {
-                                console.log('[SW] Serving from cache (chunk):', url.pathname);
-                                return cachedResponse;
-                            }
-                            // キャッシュもない場合はネットワークエラーを返す
-                            console.log('[SW] Chunk load error, no cache available:', url.pathname);
-                            return new Response('', { status: 404 });
-                        });
-                    })
-            );
-        }
-        return;
-    }
-
-    // 画像はキャッシュ優先
-    if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/)) {
-        if (isDevelopment) {
-            event.respondWith(
-                fetch(request, { priority: 'low', cache: 'no-store' })
-                    .then((response) => {
-                        console.log('[SW] Image (dev):', url.pathname, response.status);
-                        return response;
-                    })
-                    .catch(() => {
-                        console.log('[SW] Image offline:', url.pathname);
-                        return new Response('', { status: 404 });
-                    })
-            );
-        } else {
-            event.respondWith(
-                caches.match(request).then((response) => {
-                    return (
-                        response ||
-                        fetch(request, { priority: 'low' }).then((response) => {
-                            if (response && response.status === 200) {
-                                const responseToCache = response.clone();
-                                caches.open(ASSETS_CACHE).then((cache) => {
-                                    cache.put(request, responseToCache);
-                                });
-                            }
-                            return response;
-                        })
-                    );
-                }).catch(() => {
-                    return new Response('', { status: 404 });
-                })
-            );
-        }
-        return;
-    }
-
-    // その他のリソースはキャッシュ優先
+  // 1. ナビゲーションリクエスト (HTML) -> Network First
+  if (request.mode === 'navigate') {
     event.respondWith(
-        caches.match(request).then((response) => {
-            return (
-                response ||
-                fetch(request).then((response) => {
-                    if (response && response.status === 200) {
-                        const responseToCache = response.clone();
-                        caches.open(RUNTIME_CACHE).then((cache) => {
-                            cache.put(request, responseToCache);
-                        });
-                    }
-                    return response;
-                })
-            );
-        }).catch(() => {
-            return new Response('', { status: 404 });
+      fetch(request)
+        .then((response) => {
+          // 成功した場合は実行時キャッシュに保存
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAMES.RUNTIME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => {
+          // ネットワークエラー時はキャッシュを確認、なければオフラインページ
+          return caches.match(request).then((cached) => {
+            return cached || caches.match('/offline');
+          });
         })
     );
+    return;
+  }
+
+  // 2. APIリクエスト -> Network First (No Fallback to Offline Page)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAMES.RUNTIME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(request) || new Response(JSON.stringify({ error: 'offline' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        })
+    );
+    return;
+  }
+
+  // 3. 静的アセット (Next.js Chunks, CSS, etc.) -> Cache First
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.match(/\.(js|css|woff2?|ttf|otf)$/)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAMES.STATIC).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 4. 画像アセット -> Cache First
+  if (url.pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAMES.IMAGES).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 5. その他 -> Default Strategy (Cache with Network Fallback)
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      return cached || fetch(request).then((response) => {
+        if (response.status === 200) {
+          const copy = response.clone();
+          caches.open(CACHE_NAMES.RUNTIME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      });
+    }).catch(() => new Response('Offline', { status: 404 }))
+  );
+});
+
+// --- Push / Notification Events (将来用) ---
+self.addEventListener('push', (event) => {
+  // 実装が必要な場合に追加
 });

@@ -1,54 +1,82 @@
 {
-    "name": "生徒会出欠管理システム",
-    "short_name": "出欠管理",
-    "description": "生徒会メンバーの出欠を管理するアプリケーション",
-    "start_url": "/",
-    "scope": "/",
-    "display": "standalone",
-    "orientation": "portrait-primary",
-    "theme_color": "#000000",
-    "background_color": "#ffffff",
-    "icons": [
+  "id": "shs-sei-check-pwa",
+  "name": "生徒会出欠管理システム",
+  "short_name": "出欠管理",
+  "description": "生徒会メンバーの出欠・予定をスマートに管理するPWA",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "dir": "ltr",
+  "lang": "ja",
+  "categories": [
+    "productivity",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "出欠登録",
+      "url": "/member",
+      "description": "今日の出欠を登録する",
+      "icons": [
         {
-            "src": "/icon.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any"
-        },
-        {
-            "src": "/icon.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "/icon.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any"
+          "src": "/icon.png",
+          "sizes": "192x192"
         }
-    ],
-    "categories": [
-        "productivity"
-    ],
-    "screenshots": [
+      ]
+    },
+    {
+      "name": "予定確認",
+      "url": "/member?tab=schedule",
+      "description": "これからの予定を確認する",
+      "icons": [
         {
-            "src": "/icon.png",
-            "sizes": "540x720",
-            "type": "image/png",
-            "form_factor": "narrow"
-        },
-        {
-            "src": "/icon.png",
-            "sizes": "720x720",
-            "type": "image/png",
-            "form_factor": "wide"
-        },
-        {
-            "src": "/icon.png",
-            "sizes": "1280x720",
-            "type": "image/png",
-            "form_factor": "wide"
+          "src": "/icon.png",
+          "sizes": "192x192"
         }
-    ]
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile Dashboard"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop Dashboard"
+    }
+  ]
 }

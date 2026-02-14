@@ -380,6 +380,23 @@ export async function deleteSharedResponse(sharedId: string): Promise<void> {
   await deleteDoc(sharedRef);
 }
 
+/**
+ * すべての共有リンクを取得
+ */
+export async function getAllSharedResponses(): Promise<SharedResponse[]> {
+  const querySnapshot = await getDocs(sharedResponsesCollection);
+
+  const shared: SharedResponse[] = [];
+  querySnapshot.forEach((doc) => {
+    shared.push(doc.data() as SharedResponse);
+  });
+
+  // 作成日時の降順でソート（新しい順）
+  return shared.sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
 // ===== リアルタイムリスナー関数 =====
 
 /**
@@ -410,6 +427,23 @@ export function subscribeToEvent(eventId: string, callback: (event: Event | null
     } else {
       callback(null);
     }
+  });
+}
+
+/**
+ * すべての共有リンクをリアルタイムでリッスン
+ */
+export function subscribeToAllSharedResponses(callback: (sharedResponses: SharedResponse[]) => void): Unsubscribe {
+  return onSnapshot(sharedResponsesCollection, (snapshot) => {
+    const shared: SharedResponse[] = [];
+    snapshot.forEach((doc) => {
+      shared.push(doc.data() as SharedResponse);
+    });
+    // 作成日時の降順でソート
+    shared.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    callback(shared);
   });
 }
 
@@ -470,10 +504,3 @@ export function subscribeToAnnouncement(announcementId: string, callback: (annou
     }
   });
 }
-
-
-
-
-
-
-

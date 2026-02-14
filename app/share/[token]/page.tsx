@@ -38,7 +38,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingScreen } from "@/components/Loading";
 import { members } from "@/lib/members";
 import {
-    getAllEvents,
+    getEvent,
     getAllResponses,
     saveResponse,
     getResponse,
@@ -92,8 +92,7 @@ export default function SharePage() {
             }
 
             // 共有されている予定を取得
-            const allEvents = await getAllEvents();
-            const targetEvent = allEvents.find((e) => e.id === shared.eventId);
+            const targetEvent = await getEvent(shared.eventId);
 
             if (!targetEvent) {
                 setError("予定が見つかりません。");

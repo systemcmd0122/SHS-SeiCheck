@@ -12,6 +12,7 @@ import {
     History,
     Download,
     Plus,
+    Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -67,6 +68,11 @@ export function AdminSidebar({
             id: "matrix",
             label: "マトリクス",
             icon: <Users className="w-4 h-4" />,
+        },
+        {
+            id: "shares",
+            label: "共有リンク一覧",
+            icon: <Share2 className="w-4 h-4" />,
         },
         {
             id: "history",

@@ -24,6 +24,8 @@ import {
   Share2,
   LayoutDashboard,
   Filter,
+  Search,
+  Copy,
 } from "lucide-react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
@@ -74,6 +76,7 @@ import {
 import { StatisticsPanel } from "@/components/StatisticsPanel";
 import { HistoryPanel } from "@/components/HistoryPanel";
 import { SharePanel } from "@/components/SharePanel";
+import { SharedLinksList } from "@/components/SharedLinksList";
 import { UnansweredPanel } from "@/components/UnansweredPanel";
 import { EventCalendar } from "@/components/EventCalendar";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -90,8 +93,10 @@ import {
   subscribeToAllEvents,
   subscribeToAllResponses,
   subscribeToAllAnnouncements,
+  subscribeToAllSharedResponses,
+  getAllSharedResponses,
 } from "@/lib/db";
-import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority } from "@/lib/types";
+import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority, SharedResponse } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
 import { AnnouncementDialog, ShareLinkDialog, AddEventDialog } from "@/components/CommonDialogs";
@@ -118,8 +123,11 @@ export default function AdminPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [sharedResponses, setSharedResponses] = useState<SharedResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEventType, setSelectedEventType] = useState<EventType | "全て">("全て");
+  const [eventSearchQuery, setEventSearchQuery] = useState("");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
   const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
@@ -193,14 +201,16 @@ export default function AdminPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [eventsData, responsesData, announcementsData] = await Promise.all([
+      const [eventsData, responsesData, announcementsData, sharedData] = await Promise.all([
         getAllEvents(),
         getAllResponses(),
         getAllAnnouncements(),
+        getAllSharedResponses(),
       ]);
       setEvents(eventsData);
       setResponses(responsesData);
       setAnnouncements(announcementsData);
+      setSharedResponses(sharedData);
     } catch (error) {
       console.error("データ読み込みエラー:", error);
       const errorMessage = getErrorMessage(error);
@@ -226,11 +236,16 @@ export default function AdminPage() {
       setAnnouncements(updatedAnnouncements);
     });
 
+    const unsubscribeShared = subscribeToAllSharedResponses((updatedShared) => {
+      setSharedResponses(updatedShared);
+    });
+
     // クリーンアップ: コンポーネントアンマウント時にリスナーを解除
     return () => {
       unsubscribeEvents();
       unsubscribeResponses();
       unsubscribeAnnouncements();
+      unsubscribeShared();
     };
   }, []);
 
@@ -427,10 +442,30 @@ export default function AdminPage() {
     }
   };
 
-  const filteredEvents =
-    selectedEventType === "全て"
-      ? events.filter((e) => e.isAttendanceRequired !== false)
-      : events.filter((e) => e.type === selectedEventType && e.isAttendanceRequired !== false);
+  const handleCloneEvent = (event: Event) => {
+    // 日時以外の情報を引き継ぐ
+    const date = event.dateTime ? event.dateTime.split("T")[0] : "";
+    const time = event.dateTime && event.dateTime.includes("T") ? event.dateTime.split("T")[1].substring(0, 5) : "";
+    const deadlineDate = event.deadline ? event.deadline.split("T")[0] : "";
+
+    setNewEvent({
+      title: `${event.title} (コピー)`,
+      type: event.type,
+      date: date,
+      time: time,
+      deadlineDate: deadlineDate,
+    });
+    setIsCreateDialogOpen(true);
+    successToast("情報をコピーしました", "日時などを調整して保存してください");
+  };
+
+  const filteredEvents = events
+    .filter((e) => e.isAttendanceRequired !== false)
+    .filter((e) => selectedEventType === "全て" || e.type === selectedEventType)
+    .filter((e) =>
+      eventSearchQuery === "" ||
+      e.title.toLowerCase().includes(eventSearchQuery.toLowerCase())
+    );
 
   const getUnansweredMembers = (eventId: string) => {
     const eventResponses = responses.filter((r) => r.eventId === eventId);
@@ -741,6 +776,13 @@ export default function AdminPage() {
                   <span className="font-bold">マトリクス</span>
                 </TabsTrigger>
                 <TabsTrigger
+                  value="shares"
+                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  <span className="font-bold">共有リンク</span>
+                </TabsTrigger>
+                <TabsTrigger
                   value="history"
                   className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                 >
@@ -1035,28 +1077,39 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="events" id="tab-content-events" className="space-y-6 animate-fade-in" ref={eventListRef}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 bg-card px-4 py-2 rounded-xl border border-border/50 shadow-sm">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類で絞り込み</Label>
-                <Select
-                  value={selectedEventType}
-                  onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
-                >
-                  <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs border-0 shadow-none focus:ring-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="全て">全て</SelectItem>
-                    {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="予定を検索..."
+                    value={eventSearchQuery}
+                    onChange={(e) => setEventSearchQuery(e.target.value)}
+                    className="pl-9 h-10 rounded-xl bg-card"
+                  />
+                </div>
+                <div className="flex items-center gap-3 bg-card px-4 py-0 rounded-xl border border-border/50 shadow-sm h-10">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類</Label>
+                  <Select
+                    value={selectedEventType}
+                    onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
+                  >
+                    <SelectTrigger className="w-full sm:w-[120px] h-8 text-xs border-0 shadow-none focus:ring-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="全て">全て</SelectItem>
+                      {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <Button size="sm" className="rounded-xl shadow-md" onClick={() => setIsCreateDialogOpen(true)}>
+              <Button size="sm" className="rounded-xl shadow-md h-10" onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 新規作成
               </Button>
@@ -1123,6 +1176,15 @@ export default function AdminPage() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleCloneEvent(event)}
+                                      className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                      title="予定をコピー"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="icon"
@@ -1279,25 +1341,36 @@ export default function AdminPage() {
                       全メンバーと全予定の出欠状況一覧
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-3 bg-card px-3 py-1.5 rounded-xl border border-border/50">
-                    <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                    <Label className="text-xs font-bold label-caps text-muted-foreground">種類で絞り込み</Label>
-                    <Select
-                      value={selectedEventType}
-                      onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
-                    >
-                      <SelectTrigger className="w-[120px] h-7 text-xs border-0 shadow-none focus:ring-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="全て">全て</SelectItem>
-                        {EVENT_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="メンバーを検索..."
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        className="pl-8 h-8 text-xs rounded-lg bg-card max-w-[180px]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 bg-card px-3 py-0 rounded-xl border border-border/50 h-8">
+                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                      <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類</Label>
+                      <Select
+                        value={selectedEventType}
+                        onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
+                      >
+                        <SelectTrigger className="w-[110px] h-6 text-xs border-0 shadow-none focus:ring-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="全て">全て</SelectItem>
+                          {EVENT_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -1311,10 +1384,15 @@ export default function AdminPage() {
                   <div className="space-y-6" ref={matrixListRef}>
                     {/* ページネーション計算 */}
                     {(() => {
+                      const filteredMembers = members.filter(m =>
+                        memberSearchQuery === "" ||
+                        m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
+                        m.committee.toLowerCase().includes(memberSearchQuery.toLowerCase())
+                      );
                       const startIndex = (currentPage - 1) * itemsPerPage;
                       const endIndex = startIndex + itemsPerPage;
-                      const paginatedMembers = members.slice(startIndex, endIndex);
-                      const totalPages = Math.ceil(members.length / itemsPerPage);
+                      const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+                      const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
 
                       return (
                         <>
@@ -1442,6 +1520,25 @@ export default function AdminPage() {
                     })()}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 共有リンク管理タブ */}
+          <TabsContent value="shares" id="tab-content-shares" className="space-y-4 animate-fade-in">
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="section-title">共有リンク管理</CardTitle>
+                    <CardDescription className="mt-1">
+                      現在有効な共有リンクの一覧と管理
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <SharedLinksList events={events} sharedResponses={sharedResponses} />
               </CardContent>
             </Card>
           </TabsContent>

@@ -415,7 +415,7 @@ export function TeacherChatPanel({ events }: TeacherChatPanelProps) {
                     </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                    💡 Ctrl+Enterで送信
+                    Ctrl+Enterで送信
                 </p>
             </div>
         </div>

@@ -29,7 +29,7 @@ function generateShareMessage(event: Event, shareUrl: string): string {
 
 「${event.title}」の出欠回答をお願いします。
 
-📋 詳細
+詳細
 ─────────────────
 種類: ${event.type}
 開催日時: ${eventDateTime}

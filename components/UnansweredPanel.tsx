@@ -181,7 +181,7 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                     isOverdue ? "text-rose-600/70 dark:text-rose-400/70" : "text-amber-600/70 dark:text-amber-400/70"
                 )}>
                     {unansweredMembers.length}人のメンバーが未回答です
-                    {isOverdue && " （締切超過）"}
+                    {isOverdue && " (締切超過)"}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-0">
@@ -271,7 +271,7 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                     {/* 注意事項 */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-sm border border-blue-200 dark:border-blue-800">
                         <p className="text-blue-700 dark:text-blue-300">
-                            💡 共有リンクを使用すれば、ログインなしで回答できます
+                            共有リンクを使用すれば、ログインなしで回答できます
                         </p>
                     </div>
                 </ShareLinkDialog>
@@ -283,7 +283,7 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                     </p>
                     {isOverdue && (
                         <p className="text-red-600 dark:text-red-400 font-medium">
-                            ⚠ 締切超過
+                            締切超過
                         </p>
                     )}
                 </div>

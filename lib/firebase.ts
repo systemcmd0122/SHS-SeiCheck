@@ -16,7 +16,7 @@ const firebaseConfig = {
 const requiredConfig = ["apiKey", "projectId", "appId"];
 for (const key of requiredConfig) {
   if (!firebaseConfig[key as keyof typeof firebaseConfig]) {
-    console.error(`❌ Firebase環境変数が設定されていません: NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`);
+    console.error(`Firebase環境変数が設定されていません: NEXT_PUBLIC_FIREBASE_${key.toUpperCase()}`);
   }
 }
 

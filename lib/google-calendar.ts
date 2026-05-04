@@ -40,7 +40,7 @@ export async function getGoogleCalendarEvents(
                 });
 
                 if (!response.ok) {
-                    console.warn(`⚠️ カレンダー取得失敗: ${calendarId}`);
+                    console.warn(`カレンダー取得失敗: ${calendarId}`);
                     continue;
                 }
 

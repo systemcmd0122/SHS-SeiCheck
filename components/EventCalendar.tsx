@@ -254,7 +254,7 @@ export function EventCalendar({
                                                                         onEventClick?.(de);
                                                                     }}
                                                                 >
-                                                                    <span className="shrink-0">{de.isAttendanceRequired !== false ? '✓' : '•'}</span>
+                                                                    <span className="shrink-0">{de.isAttendanceRequired !== false ? '*' : '-'}</span>
                                                                     <span className="truncate">{de.title}</span>
                                                                 </div>
                                                             ))}
@@ -264,7 +264,7 @@ export function EventCalendar({
                                                                     className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-1 py-0.5 truncate font-bold text-[8px] dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800/60 shadow-sm"
                                                                     title={ge.title}
                                                                 >
-                                                                    📅 {ge.title}
+                                                                    {ge.title}
                                                                 </div>
                                                             ))}
                                                             {remainingCount > 0 && (

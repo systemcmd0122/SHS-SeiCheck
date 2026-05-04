@@ -19,7 +19,7 @@ export function formatEventForClassroom(event: GoogleCalendarEvent): string {
         day: "2-digit",
     });
 
-    let text = `📅 ${event.title}\n`;
+    let text = `${event.title}\n`;
     text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     text += `開始: ${formattedStart}\n`;
     text += `終了: ${formattedEnd}\n`;
@@ -41,7 +41,7 @@ export function formatEventForClassroom(event: GoogleCalendarEvent): string {
  * 複数のカレンダーイベントをClassroom投稿用のテキスト形式に変換
  */
 export function formatEventsForClassroom(events: GoogleCalendarEvent[]): string {
-    let text = `📅 予定のお知らせ (${events.length}件)\n`;
+    let text = `予定のお知らせ (${events.length}件)\n`;
     text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     events.forEach((event, index) => {

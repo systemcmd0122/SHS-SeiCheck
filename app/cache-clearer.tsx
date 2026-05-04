@@ -17,7 +17,7 @@ export function CacheClearer() {
         // 共通: グローバルでキャッシュクリア関数を公開
         const clearAllCachesAndReload = async () => {
             try {
-                console.log('🧹 全てのキャッシュをクリア中...');
+                console.log('全てのキャッシュをクリア中...');
 
                 // Service Worker のキャッシュをすべて削除
                 if ('caches' in window) {
@@ -28,7 +28,7 @@ export function CacheClearer() {
                             return caches.delete(name);
                         })
                     );
-                    console.log('✓ キャッシュ削除完了');
+                    console.log('キャッシュ削除完了');
                 }
 
                 // Service Worker を再登録
@@ -37,10 +37,10 @@ export function CacheClearer() {
                     for (const registration of registrations) {
                         await registration.unregister();
                     }
-                    console.log('✓ Service Worker の登録解除完了');
+                    console.log('Service Worker の登録解除完了');
                 }
 
-                console.log('✓ 全てのキャッシュをクリアしました');
+                console.log('全てのキャッシュをクリアしました');
 
                 // ハードリロード
                 if (isDevelopment) {
@@ -50,7 +50,7 @@ export function CacheClearer() {
                     window.location.href = window.location.href;
                 }
             } catch (error) {
-                console.error('✗ キャッシュクリアエラー:', error);
+                console.error('キャッシュクリアエラー:', error);
                 return false;
             }
         };
@@ -62,7 +62,7 @@ export function CacheClearer() {
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.ctrlKey && e.shiftKey && e.key === 'D') {
                     e.preventDefault();
-                    console.log('🔑 Ctrl+Shift+D が押下されました');
+                    console.log('Ctrl+Shift+D が押下されました');
                     clearAllCachesAndReload();
                 }
             };
@@ -78,7 +78,7 @@ export function CacheClearer() {
         if (!isDevelopment) {
             const handleError = (event: ErrorEvent) => {
                 if (event.message?.includes('ChunkLoadError') || event.message?.includes('Failed to load chunk')) {
-                    console.error('✗ ChunkLoadError detected:', event.message);
+                    console.error('ChunkLoadError detected:', event.message);
                     console.log('キャッシュをクリアしてリロードします...');
                     clearAllCachesAndReload();
                 }
@@ -89,7 +89,7 @@ export function CacheClearer() {
                 if (event.reason?.message?.includes('ChunkLoadError') ||
                     event.reason?.message?.includes('Failed to load chunk') ||
                     String(event.reason).includes('ChunkLoadError')) {
-                    console.error('✗ Unhandled ChunkLoadError rejection detected');
+                    console.error('Unhandled ChunkLoadError rejection detected');
                     console.log('キャッシュをクリアしてリロードします...');
                     clearAllCachesAndReload();
                 }
@@ -120,7 +120,7 @@ export function CacheClearer() {
                         }
                     }
 
-                    console.log('✓ Cache integrity check passed');
+                    console.log('Cache integrity check passed');
                 } catch (error) {
                     console.error('Cache validation error:', error);
                 }

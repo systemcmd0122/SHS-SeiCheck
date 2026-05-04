@@ -128,9 +128,9 @@ export async function saveResponse(response: Response): Promise<void> {
     }
 
     await setDoc(responseRef, responseData);
-    console.log("✓ 回答を保存しました:", responseId);
+    console.log("回答を保存しました:", responseId);
   } catch (error) {
-    console.error("✗ 回答保存エラー:", error);
+    console.error("回答保存エラー:", error);
     throw new Error(
       error instanceof Error
         ? `回答の保存に失敗しました: ${error.message}`

@@ -110,12 +110,12 @@ Service Worker登録時に開発環境検出で自動的にno-store設定が適�
 コンソールに以下のようなログが出力されます：
 
 ```
-✓ Service Worker registered
-✓ Service Worker update check completed
-✓ New Service Worker installed
-✓ Cache integrity check passed
-✗ ChunkLoadError detected
-✓ All caches cleared
+Service Worker registered
+Service Worker update check completed
+New Service Worker installed
+Cache integrity check passed
+ChunkLoadError detected
+All caches cleared
 ```
 
 ## 参考文献

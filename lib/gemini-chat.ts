@@ -76,7 +76,7 @@ export function generateSystemPrompt(): string {
 - 提案は具体的で実行可能なものにしてください
 - ユーザーのカレンダー情報を参考にしながら、実現的なアドバイスをしてください
 - 敬語を使用してください
-- 必要に応じて絵文字を使用して、分かりやすくしてください`;
+- 絵文字は使用しないでください`;
 }
 
 /**
@@ -181,7 +181,7 @@ export function generateInitialMessage(events: GoogleCalendarEvent[]): string {
     const eventCount = events.length;
 
     if (eventCount === 0) {
-        return "こんにちは!📅 カレンダーにはまだ予定が登録されていないようですね。何かお手伝いできることはありますか?予定の提案や、スケジュール計画のアドバイスなど、何でもお聞きください。";
+        return "こんにちは! カレンダーにはまだ予定が登録されていないようですね。何かお手伝いできることはありますか?予定の提案や、スケジュール計画のアドバイスなど、何でもお聞きください。";
     }
 
     const upcomingEvent = events[0];
@@ -193,7 +193,7 @@ export function generateInitialMessage(events: GoogleCalendarEvent[]): string {
         minute: "2-digit",
     });
 
-    return `こんにちは!👋 あなたのカレンダーには現在 ${eventCount} 件の予定が登録されています。次のイベントは ${upcomingEvent.title} (${dateStr}) です。
+    return `こんにちは! あなたのカレンダーには現在 ${eventCount} 件の予定が登録されています。次のイベントは ${upcomingEvent.title} (${dateStr}) です。
 
 予定の相談や、スケジュール調整のアドバイスなど、何かお手伝いできることはありますか?`;
 }

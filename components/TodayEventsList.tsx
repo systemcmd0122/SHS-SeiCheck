@@ -41,46 +41,41 @@ export function TodayEventsList({ events, onEventClick, isLoading }: TodayEvents
     });
 
     return (
-        <Card className="border-none shadow-xl bg-card/50 backdrop-blur-md overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                <Calendar className="w-24 h-24" />
-            </div>
-            <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-primary font-black italic uppercase tracking-tighter">
-                    <Calendar className="w-5 h-5" />
+        <Card className="border shadow-sm overflow-hidden bg-card">
+            <CardHeader className="pb-3 border-b bg-muted/30">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold">
+                    <Calendar className="w-4 h-4 text-primary" />
                     今日の予定
                 </CardTitle>
-                <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                <CardDescription className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     {format(today, "yyyy.MM.dd (EEE)", { locale: ja })}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
                 {isLoading ? (
                     <EventListSkeleton />
                 ) : todayEvents.length === 0 ? (
-                    <div className="py-10 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
-                        <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest">今日の予定はありません</p>
+                    <div className="py-8 text-center text-muted-foreground">
+                        <p className="text-xs">今日の予定はありません</p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {todayEvents.map((event) => (
                             <div
                                 key={event.id}
-                                className={`group p-4 rounded-2xl border border-primary/10 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm shadow-sm transition-all ${onEventClick ? 'hover:shadow-lg hover:bg-white dark:hover:bg-gray-900 cursor-pointer active:scale-[0.98]' : ''}`}
+                                className={`p-3 rounded-lg border bg-background transition-colors ${onEventClick ? 'hover:bg-muted cursor-pointer' : ''}`}
                                 onClick={() => onEventClick?.(event)}
                             >
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-black text-sm sm:text-base mb-2 group-hover:text-primary transition-colors">
+                                        <h3 className="font-bold text-sm truncate">
                                             {event.title}
                                         </h3>
-                                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest bg-white/50 dark:bg-black/20">
+                                        <Badge variant="outline" className="text-[9px] h-4 mt-1">
                                             {event.type}
                                         </Badge>
                                     </div>
-                                    {onEventClick && <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:translate-x-1 transition-transform">
-                                        <ChevronRight className="w-5 h-5" />
-                                    </div>}
+                                    {onEventClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                                 </div>
                             </div>
                         ))}

@@ -136,14 +136,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("events");
   const [selectedEventForShare, setSelectedEventForShare] = useState<Event | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // 1ページに10メンバー表示
+  const itemsPerPage = 10;
   const [eventCurrentPage, setEventCurrentPage] = useState(1);
-  const eventItemsPerPage = 10; // 1ページに10イベント表示
+  const eventItemsPerPage = 10;
   const matrixListRef = useRef<HTMLDivElement>(null);
   const eventListRef = useRef<HTMLDivElement>(null);
   const announcementListRef = useRef<HTMLDivElement>(null);
   const [announcementCurrentPage, setAnnouncementCurrentPage] = useState(1);
-  const announcementItemsPerPage = 10; // 1ページに10お知らせ表示
+  const announcementItemsPerPage = 10;
 
   const handleMatrixPageChange = (page: number) => {
     setCurrentPage(page);
@@ -168,8 +168,6 @@ export default function AdminPage() {
 
   const handleTabChangeWithScroll = (tabId: string) => {
     setActiveTab(tabId);
-
-    // 次のフレームでスクロール（状態更新後に実行）
     setTimeout(() => {
       const element = document.getElementById(`tab-content-${tabId}`);
       if (element) {
@@ -223,7 +221,6 @@ export default function AdminPage() {
   useEffect(() => {
     loadData();
 
-    // リアルタイムリスナーの設定
     const unsubscribeEvents = subscribeToAllEvents((updatedEvents) => {
       setEvents(updatedEvents);
     });
@@ -240,7 +237,6 @@ export default function AdminPage() {
       setSharedResponses(updatedShared);
     });
 
-    // クリーンアップ: コンポーネントアンマウント時にリスナーを解除
     return () => {
       unsubscribeEvents();
       unsubscribeResponses();
@@ -249,7 +245,6 @@ export default function AdminPage() {
     };
   }, []);
 
-  // タブ変更時にページをリセット
   useEffect(() => {
     setCurrentPage(1);
     setEventCurrentPage(1);
@@ -257,7 +252,6 @@ export default function AdminPage() {
   }, [activeTab]);
 
   const handleCreateEvent = async () => {
-    // バリデーション
     if (!newEvent.title || !newEvent.date || !newEvent.deadlineDate) {
       errorToast("入力エラー", "タイトル、開催日、締切日を入力してください");
       return;
@@ -274,12 +268,9 @@ export default function AdminPage() {
     }
 
     try {
-      // 開催日時を構築（時間が指定されていない場合は00:00）
       const dateTime = newEvent.time
         ? `${newEvent.date}T${newEvent.time}:00`
         : `${newEvent.date}T00:00:00`;
-
-      // 締め切りは指定日の23:59
       const deadline = `${newEvent.deadlineDate}T23:59:00`;
 
       await createEvent({
@@ -300,7 +291,6 @@ export default function AdminPage() {
         deadlineDate: "",
       });
       successToast("作成成功", "予定を作成しました");
-      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定作成エラー:", error);
       const errorMessage = getErrorMessage(error);
@@ -316,11 +306,6 @@ export default function AdminPage() {
 
     if (newCalendarEvent.title.trim().length < 1 || newCalendarEvent.title.length > 100) {
       errorToast("入力エラー", "タイトルは1文字以上100文字以下で入力してください");
-      return;
-    }
-
-    if (newCalendarEvent.description && newCalendarEvent.description.length > 500) {
-      errorToast("入力エラー", "説明は500文字以下で入力してください");
       return;
     }
 
@@ -392,7 +377,6 @@ export default function AdminPage() {
         priority: "通常",
       });
       successToast("完了", editingAnnouncement ? "お知らせを更新しました" : "お知らせを作成しました");
-      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ作成エラー:", error);
       const errorMessage = getErrorMessage(error);
@@ -418,7 +402,6 @@ export default function AdminPage() {
     try {
       await deleteAnnouncement(announcementId);
       successToast("削除成功", "お知らせを削除しました");
-      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("お知らせ削除エラー:", error);
       const errorMessage = getErrorMessage(error);
@@ -434,7 +417,6 @@ export default function AdminPage() {
     try {
       await deleteEvent(eventId);
       successToast("削除成功", "予定を削除しました");
-      // リアルタイムリスナーが自動的に更新する
     } catch (error) {
       console.error("予定削除エラー:", error);
       const errorMessage = getErrorMessage(error);
@@ -443,7 +425,6 @@ export default function AdminPage() {
   };
 
   const handleCloneEvent = (event: Event) => {
-    // 日時以外の情報を引き継ぐ
     const date = event.dateTime ? event.dateTime.split("T")[0] : "";
     const time = event.dateTime && event.dateTime.includes("T") ? event.dateTime.split("T")[1].substring(0, 5) : "";
     const deadlineDate = event.deadline ? event.deadline.split("T")[0] : "";
@@ -488,7 +469,6 @@ export default function AdminPage() {
   };
 
   const exportToCSV = () => {
-    // 出欠確認が必要な予定のみをエクスポート
     const data = events
       .filter(e => e.isAttendanceRequired !== false)
       .map((event) => {
@@ -529,25 +509,22 @@ export default function AdminPage() {
   const getStatusBadge = (status: ResponseStatus) => {
     const badges: Record<ResponseStatus, JSX.Element> = {
       参加: (
-        <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">
-          <CheckCircle2 className="w-3 h-3 mr-1" />
+        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white border-0">
           参加
         </Badge>
       ),
       不参加: (
-        <Badge className="bg-rose-500 hover:bg-rose-600 text-white border-0">
-          <XCircle className="w-3 h-3 mr-1" />
+        <Badge className="bg-rose-600 hover:bg-rose-700 text-white border-0">
           不参加
         </Badge>
       ),
       遅れる: (
-        <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
-          <Clock className="w-3 h-3 mr-1" />
+        <Badge className="bg-amber-600 hover:bg-amber-700 text-white border-0">
           遅れる
         </Badge>
       ),
       未回答: (
-        <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900">
+        <Badge variant="outline">
           未回答
         </Badge>
       ),
@@ -558,8 +535,8 @@ export default function AdminPage() {
   const getPriorityBadge = (priority: AnnouncementPriority) => {
     const badges = {
       通常: <Badge variant="outline">通常</Badge>,
-      重要: <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">重要</Badge>,
-      緊急: <Badge className="bg-red-500 hover:bg-red-600 text-white border-0">緊急</Badge>,
+      重要: <Badge className="bg-amber-600 text-white border-0">重要</Badge>,
+      緊急: <Badge variant="destructive">緊急</Badge>,
     };
     return badges[priority];
   };
@@ -569,20 +546,17 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-background">
       {/* ヘッダー */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-lg font-bold">管理者ダッシュボード</h1>
-                <p className="text-xs text-muted-foreground">出欠状況管理</p>
-              </div>
-              <h1 className="text-lg font-bold sm:hidden">管理画面</h1>
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold">管理者ダッシュボード</h1>
+              <p className="text-[10px] text-muted-foreground uppercase">Management Console</p>
             </div>
           </div>
 
@@ -591,7 +565,6 @@ export default function AdminPage() {
               variant="ghost"
               size="icon"
               onClick={() => router.push("/")}
-              className="text-muted-foreground hover:text-foreground"
               title="ホームに戻る"
             >
               <Home className="w-5 h-5" />
@@ -610,19 +583,16 @@ export default function AdminPage() {
       </header>
 
       <div className="container mx-auto p-4 space-y-6 max-w-7xl">
-        {/* お知らせ管理セクション (上部クイック表示) */}
+        {/* お知らせ管理セクション */}
         {announcements.length > 0 && (
-          <Card className="border-0 shadow-sm overflow-hidden animate-fade-in">
+          <Card className="border shadow-sm overflow-hidden">
             <CardHeader className="bg-muted/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="section-title text-base flex items-center gap-2">
+                  <CardTitle className="text-base flex items-center gap-2">
                     <Bell className="w-4 h-4 text-primary" />
                     お知らせ管理
                   </CardTitle>
-                  <CardDescription className="mt-0.5">
-                    作成したお知らせの管理
-                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -630,36 +600,28 @@ export default function AdminPage() {
               {announcements.slice(0, 3).map((announcement) => (
                 <div
                   key={announcement.id}
-                  className={`p-4 rounded-xl border transition-all card-hover ${announcement.priority === "緊急"
-                    ? "border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20"
-                    : announcement.priority === "重要"
-                      ? "border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20"
-                      : "bg-card border-border/50"
-                    }`}
+                  className="p-4 rounded-lg border bg-card"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
-                        {announcement.priority !== "通常" && (
-                          <Megaphone className="w-3.5 h-3.5 text-primary shrink-0" />
-                        )}
                         <h3 className="font-bold text-sm truncate">
                           {announcement.title}
                         </h3>
                         {getPriorityBadge(announcement.priority)}
                       </div>
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap mb-2 line-clamp-1">
+                      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
                         {announcement.content}
                       </p>
-                      <p className="text-[10px] label-caps text-muted-foreground">
-                        {format(new Date(announcement.createdAt), "M月d日 HH:mm", { locale: ja })}
+                      <p className="text-[10px] text-muted-foreground">
+                        {safeFormat(announcement.createdAt, "M/d HH:mm")}
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-100/50"
+                        className="h-8 w-8"
                         onClick={() => handleEditAnnouncement(announcement)}
                       >
                         <Edit className="h-3.5 w-3.5" />
@@ -667,7 +629,7 @@ export default function AdminPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-100/50"
+                        className="h-8 w-8 text-destructive"
                         onClick={() => handleDeleteAnnouncement(announcement.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -677,7 +639,7 @@ export default function AdminPage() {
                 </div>
               ))}
               {announcements.length > 3 && (
-                <Button variant="ghost" className="w-full text-xs text-muted-foreground h-8" onClick={() => setActiveTab("announcements")}>
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setActiveTab("announcements")}>
                   すべて表示 ({announcements.length}件)
                 </Button>
               )}
@@ -686,368 +648,127 @@ export default function AdminPage() {
         )}
 
         {/* 統計カード */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <Card className="border-0 shadow-sm card-hover bg-blue-50/50 dark:bg-blue-950/20">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-bold label-caps">出欠確認予定数</CardTitle>
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              </div>
+              <CardTitle className="text-xs font-bold uppercase text-muted-foreground">予定数</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{events.filter(e => e.isAttendanceRequired !== false).length}</div>
-              <p className="text-[10px] text-muted-foreground mt-1">回答が必要な予定</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm card-hover bg-emerald-50/50 dark:bg-emerald-950/20">
+          <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-bold label-caps">メンバー数</CardTitle>
-              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
-                <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              </div>
+              <CardTitle className="text-xs font-bold uppercase text-muted-foreground">メンバー</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{members.length}</div>
-              <p className="text-[10px] text-muted-foreground mt-1">生徒会メンバー</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm card-hover bg-rose-50/50 dark:bg-rose-950/20">
+          <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-bold label-caps">締切超過</CardTitle>
-              <div className="p-1.5 bg-rose-100 dark:bg-rose-900 rounded-lg">
-                <AlertTriangle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-              </div>
+              <CardTitle className="text-xs font-bold uppercase text-muted-foreground">締切超過</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {events.filter((e) => isOverdue(e) && getUnansweredMembers(e.id).length > 0).length}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">未回答あり</p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm card-hover bg-purple-50/50 dark:bg-purple-950/20">
+          <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-bold label-caps">総回答数</CardTitle>
-              <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-              </div>
+              <CardTitle className="text-xs font-bold uppercase text-muted-foreground">回答数</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{responses.length}</div>
-              <p className="text-[10px] text-muted-foreground mt-1">提出済み</p>
             </CardContent>
           </Card>
         </div>
 
         {/* メインコンテンツ */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="hidden md:flex items-center justify-between bg-muted/30 p-1.5 rounded-2xl border border-border/50">
-            <div className="flex items-center justify-center overflow-x-auto flex-1">
-              <TabsList className="bg-transparent h-10 gap-1">
-                <TabsTrigger
-                  value="announcements"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <Bell className="w-4 h-4 mr-2" />
-                  <span className="font-bold">お知らせ</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="calendar"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  <span className="font-bold">カレンダー</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="events"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <LayoutDashboard className="w-4 h-4 mr-2" />
-                  <span className="font-bold">予定一覧</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="matrix"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  <span className="font-bold">マトリクス</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="shares"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  <span className="font-bold">共有リンク</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="history"
-                  className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                >
-                  <History className="w-4 h-4 mr-2" />
-                  <span className="font-bold">履歴</span>
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="flex gap-2 ml-4">
-              {activeTab === "announcements" && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingAnnouncement(null);
-                    setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                    setIsAnnouncementDialogOpen(true);
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  お知らせ作成
-                </Button>
-              )}
-              {activeTab === "events" && (
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      予定を追加
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[95vw] sm:max-w-md p-4 sm:p-6">
-                    <DialogHeader className="space-y-2">
-                      <DialogTitle className="text-lg sm:text-xl">予定を作成</DialogTitle>
-                      <DialogDescription className="text-sm sm:text-base">
-                        新しい予定を追加してください
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="event-title" className="text-sm sm:text-base">タイトル</Label>
-                        <Input
-                          id="event-title"
-                          value={newEvent.title}
-                          onChange={(e) =>
-                            setNewEvent({ ...newEvent, title: e.target.value })
-                          }
-                          placeholder="例: 定例会"
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="event-type" className="text-sm sm:text-base">種類</Label>
-                        <Select
-                          value={newEvent.type}
-                          onValueChange={(value: EventType) =>
-                            setNewEvent({ ...newEvent, type: value })
-                          }
-                        >
-                          <SelectTrigger className="text-sm sm:text-base">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {EVENT_TYPES.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="event-date" className="text-sm sm:text-base">開催日</Label>
-                        <Input
-                          id="event-date"
-                          type="date"
-                          value={newEvent.date}
-                          onChange={(e) =>
-                            setNewEvent({ ...newEvent, date: e.target.value })
-                          }
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="event-time" className="text-sm sm:text-base">開催時刻（オプション）</Label>
-                        <Input
-                          id="event-time"
-                          type="time"
-                          value={newEvent.time}
-                          onChange={(e) =>
-                            setNewEvent({ ...newEvent, time: e.target.value })
-                          }
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="event-deadline" className="text-sm sm:text-base">締切日</Label>
-                        <Input
-                          id="event-deadline"
-                          type="date"
-                          value={newEvent.deadlineDate}
-                          onChange={(e) =>
-                            setNewEvent({ ...newEvent, deadlineDate: e.target.value })
-                          }
-                          className="text-sm sm:text-base"
-                        />
-                      </div>
-                    </div>
-
-                    <DialogFooter className="flex gap-2 justify-end pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsCreateDialogOpen(false);
-                          setNewEvent({
-                            title: "",
-                            type: "定例会",
-                            date: "",
-                            time: "",
-                            deadlineDate: "",
-                          });
-                        }}
-                        size="sm"
-                      >
-                        キャンセル
-                      </Button>
-                      <Button onClick={handleCreateEvent} size="sm">
-                        作成
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
+          <div className="overflow-x-auto pb-1">
+            <TabsList className="h-10">
+              <TabsTrigger value="announcements">お知らせ</TabsTrigger>
+              <TabsTrigger value="calendar">カレンダー</TabsTrigger>
+              <TabsTrigger value="events">予定一覧</TabsTrigger>
+              <TabsTrigger value="matrix">マトリクス</TabsTrigger>
+              <TabsTrigger value="shares">共有リンク</TabsTrigger>
+              <TabsTrigger value="history">履歴</TabsTrigger>
+            </TabsList>
           </div>
 
-          <TabsContent value="announcements" id="tab-content-announcements" className="space-y-4 animate-fade-in">
-            <Card className="border-0 shadow-sm overflow-hidden">
+          <TabsContent value="announcements" id="tab-content-announcements" className="space-y-4">
+            <Card className="border shadow-sm overflow-hidden">
               <CardHeader className="bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="section-title">お知らせ一覧</CardTitle>
-                    <CardDescription className="mt-1">
-                      メンバーに表示されるお知らせを管理
-                    </CardDescription>
-                  </div>
+                  <CardTitle className="text-lg">お知らせ一覧</CardTitle>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingAnnouncement(null);
+                      setNewAnnouncement({ title: "", content: "", priority: "通常" });
+                      setIsAnnouncementDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    追加
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {announcements.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">お知らせがありません</p>
-                    <Button
-                      onClick={() => {
-                        setEditingAnnouncement(null);
-                        setNewAnnouncement({ title: "", content: "", priority: "通常" });
-                        setIsAnnouncementDialogOpen(true);
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      最初のお知らせを作成
-                    </Button>
+                  <div className="py-12 text-center text-muted-foreground">
+                    <p>お知らせがありません</p>
                   </div>
                 ) : (
                   <>
-                    {/* ページネーション計算 */}
                     {(() => {
                       const startIndex = (announcementCurrentPage - 1) * announcementItemsPerPage;
-                      const endIndex = startIndex + announcementItemsPerPage;
-                      const paginatedAnnouncements = announcements.slice(startIndex, endIndex);
+                      const paginatedAnnouncements = announcements.slice(startIndex, startIndex + announcementItemsPerPage);
                       const totalPages = Math.ceil(announcements.length / announcementItemsPerPage);
 
                       return (
-                        <Fragment>
-                          <div className="space-y-3" ref={announcementListRef}>
-                            {paginatedAnnouncements.map((announcement) => (
-                              <div
-                                key={announcement.id}
-                                className={`p-4 rounded-lg border transition-all ${announcement.priority === "緊急"
-                                  ? "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/50"
-                                  : announcement.priority === "重要"
-                                    ? "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50"
-                                    : "bg-card hover:shadow-md"
-                                  }`}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      {announcement.priority !== "通常" && (
-                                        <Megaphone className="w-4 h-4 text-primary shrink-0" />
-                                      )}
-                                      <h3 className="font-semibold text-base truncate">
-                                        {announcement.title}
-                                      </h3>
-                                      {getPriorityBadge(announcement.priority)}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-2">
-                                      {announcement.content}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {safeFormat(announcement.createdAt, "M月d日 HH:mm")}
-                                      {announcement.updatedAt && " (編集済み)"}
-                                    </p>
+                        <div className="space-y-3" ref={announcementListRef}>
+                          {paginatedAnnouncements.map((announcement) => (
+                            <div key={announcement.id} className="p-4 rounded-lg border bg-card">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-bold text-base truncate">{announcement.title}</h3>
+                                    {getPriorityBadge(announcement.priority)}
                                   </div>
-                                  <div className="flex gap-2 shrink-0">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                      onClick={() => handleEditAnnouncement(announcement)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                      onClick={() => handleDeleteAnnouncement(announcement.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-2">{announcement.content}</p>
+                                  <p className="text-xs text-muted-foreground">{safeFormat(announcement.createdAt, "M/d HH:mm")}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button variant="ghost" size="icon" onClick={() => handleEditAnnouncement(announcement)}><Edit className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteAnnouncement(announcement.id)}><Trash2 className="h-4 w-4" /></Button>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-
-                          {/* ページネーション */}
+                            </div>
+                          ))}
                           {totalPages > 1 && (
                             <div className="mt-6">
                               <Pagination>
                                 <PaginationContent>
-                                  <PaginationItem>
-                                    <PaginationPrevious
-                                      onClick={() => handleAnnouncementPageChange(Math.max(1, announcementCurrentPage - 1))}
-                                      className={announcementCurrentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                    />
-                                  </PaginationItem>
+                                  <PaginationItem><PaginationPrevious onClick={() => handleAnnouncementPageChange(Math.max(1, announcementCurrentPage - 1))} /></PaginationItem>
                                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <PaginationItem key={page}>
-                                      <PaginationLink
-                                        onClick={() => handleAnnouncementPageChange(page)}
-                                        isActive={announcementCurrentPage === page}
-                                        className="cursor-pointer"
-                                      >
-                                        {page}
-                                      </PaginationLink>
-                                    </PaginationItem>
+                                    <PaginationItem key={page}><PaginationLink onClick={() => handleAnnouncementPageChange(page)} isActive={announcementCurrentPage === page}>{page}</PaginationLink></PaginationItem>
                                   ))}
-                                  <PaginationItem>
-                                    <PaginationNext
-                                      onClick={() => handleAnnouncementPageChange(Math.min(totalPages, announcementCurrentPage + 1))}
-                                      className={announcementCurrentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                    />
-                                  </PaginationItem>
+                                  <PaginationItem><PaginationNext onClick={() => handleAnnouncementPageChange(Math.min(totalPages, announcementCurrentPage + 1))} /></PaginationItem>
                                 </PaginationContent>
                               </Pagination>
                             </div>
                           )}
-                        </Fragment>
+                        </div>
                       );
                     })()}
                   </>
@@ -1056,80 +777,44 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="calendar" id="tab-content-calendar" className="space-y-4 animate-fade-in">
-            <div className="rounded-2xl overflow-hidden shadow-sm border border-border">
+          <TabsContent value="calendar" id="tab-content-calendar" className="space-y-4">
+            <div className="rounded-lg border shadow-sm overflow-hidden">
               <EventCalendar
-              events={events}
-              highlightDates={events
-                .filter((e) => e.type !== "その他" && getUnansweredMembers(e.id).length > 0 && e.dateTime)
-                .map((e) => {
-                  const d = new Date(e.dateTime);
-                  return !isNaN(d.getTime()) ? format(d, "yyyy-MM-dd") : "";
-                })
-                .filter(Boolean)
-              }
-              includeGoogleCalendar={true}
-              googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
+                events={events}
+                highlightDates={events
+                  .filter((e) => e.isAttendanceRequired !== false && getUnansweredMembers(e.id).length > 0 && e.dateTime)
+                  .map((e) => format(new Date(e.dateTime), "yyyy-MM-dd"))
+                }
+                includeGoogleCalendar={true}
+                googleCalendarId={process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_ID}
                 onAddEvent={() => setIsAddEventDialogOpen(true)}
                 onDeleteEvent={handleDeleteEvent}
               />
             </div>
           </TabsContent>
 
-          <TabsContent value="events" id="tab-content-events" className="space-y-6 animate-fade-in" ref={eventListRef}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="予定を検索..."
-                    value={eventSearchQuery}
-                    onChange={(e) => setEventSearchQuery(e.target.value)}
-                    className="pl-9 h-10 rounded-xl bg-card"
-                  />
-                </div>
-                <div className="flex items-center gap-3 bg-card px-4 py-0 rounded-xl border border-border/50 shadow-sm h-10">
-                  <Filter className="w-4 h-4 text-muted-foreground" />
-                  <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類</Label>
-                  <Select
-                    value={selectedEventType}
-                    onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
-                  >
-                    <SelectTrigger className="w-full sm:w-[120px] h-8 text-xs border-0 shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="全て">全て</SelectItem>
-                      {EVENT_TYPES.filter((type) => type !== "その他").map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          <TabsContent value="events" id="tab-content-events" className="space-y-6" ref={eventListRef}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="予定を検索..."
+                  value={eventSearchQuery}
+                  onChange={(e) => setEventSearchQuery(e.target.value)}
+                  className="pl-9 h-9"
+                />
               </div>
-              <Button size="sm" className="rounded-xl shadow-md h-10" onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                新規作成
-              </Button>
+              <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}><Plus className="w-4 h-4 mr-2" />作成</Button>
             </div>
 
             <div className="space-y-4">
               {filteredEvents.length === 0 ? (
-                <Card className="border-0 shadow-md">
-                  <CardContent className="py-12 text-center">
-                    <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">予定がありません</p>
-                  </CardContent>
-                </Card>
+                <div className="py-12 text-center text-muted-foreground"><p>予定がありません</p></div>
               ) : (
                 <>
-                  {/* ページネーション計算 */}
                   {(() => {
                     const startIndex = (eventCurrentPage - 1) * eventItemsPerPage;
-                    const endIndex = startIndex + eventItemsPerPage;
-                    const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+                    const paginatedEvents = filteredEvents.slice(startIndex, startIndex + eventItemsPerPage);
                     const totalPages = Math.ceil(filteredEvents.length / eventItemsPerPage);
 
                     return (
@@ -1137,188 +822,66 @@ export default function AdminPage() {
                         {paginatedEvents.map((event) => {
                           const unanswered = getUnansweredMembers(event.id);
                           const overdue = isOverdue(event);
-                          const hasWarning = overdue && unanswered.length > 0;
                           const summary = getAttendanceSummary(event.id);
 
                           return (
-                            <Card
-                              key={event.id}
-                              className={`border-0 shadow-sm transition-all overflow-hidden card-hover ${hasWarning ? "ring-2 ring-rose-500 ring-offset-2 dark:ring-offset-gray-950" : ""
-                                }`}
-                            >
-                              <CardHeader className="bg-muted/30 pb-4">
+                            <Card key={event.id} className={`border shadow-sm overflow-hidden ${overdue && unanswered.length > 0 ? "border-destructive" : ""}`}>
+                              <CardHeader className="bg-muted/20 pb-4">
                                 <div className="flex items-start justify-between gap-4">
-                                  <div className="space-y-2 flex-1 min-w-0">
+                                  <div className="space-y-1 flex-1">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <CardTitle className="section-title truncate">
-                                        {event.title}
-                                      </CardTitle>
-                                      <Badge variant="secondary" className="shrink-0 font-normal">
-                                        {event.type}
-                                      </Badge>
-                                      {hasWarning && (
-                                        <Badge className="bg-rose-500 hover:bg-rose-600 text-white border-0 shrink-0">
-                                          <AlertTriangle className="w-3 h-3 mr-1" />
-                                          <span className="hidden sm:inline text-[10px]">締切超過</span>
-                                          <span className="sm:hidden text-[10px]">警告</span>
-                                        </Badge>
-                                      )}
+                                      <CardTitle className="text-base">{event.title}</CardTitle>
+                                      <Badge variant="outline">{event.type}</Badge>
+                                      {overdue && unanswered.length > 0 && <Badge variant="destructive">期限超過</Badge>}
                                     </div>
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-                                      <span className="flex items-center gap-1">
-                                        <Calendar className="w-3 h-3" />
-                                        開催: {safeFormat(event.dateTime, "yyyy/MM/dd HH:mm")}
-                                      </span>
-                                      <span className={`flex items-center gap-1 ${overdue ? "text-rose-600 font-bold" : ""}`}>
-                                        <Clock className="w-3 h-3" />
-                                        締切: {safeFormat(event.deadline, "yyyy/MM/dd HH:mm")}
-                                      </span>
+                                    <div className="flex flex-wrap gap-x-4 text-[10px] text-muted-foreground">
+                                      <span>開催: {safeFormat(event.dateTime, "yyyy/MM/dd HH:mm")}</span>
+                                      <span className={overdue ? "text-destructive font-bold" : ""}>締切: {safeFormat(event.deadline, "yyyy/MM/dd HH:mm")}</span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => handleCloneEvent(event)}
-                                      className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                      title="予定をコピー"
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => setSelectedEventForShare(event)}
-                                      className="h-8 w-8 text-primary hover:bg-primary/10"
-                                    >
-                                      <Share2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950"
-                                      onClick={() => handleDeleteEvent(event.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                  <div className="flex gap-1 shrink-0">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCloneEvent(event)}><Copy className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => setSelectedEventForShare(event)}><Share2 className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteEvent(event.id)}><Trash2 className="h-4 w-4" /></Button>
                                   </div>
                                 </div>
                               </CardHeader>
-
-                              <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                  <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950">
-                                    <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                      {summary.attended}
+                              <CardContent className="space-y-4 pt-4">
+                                <div className="grid grid-cols-4 gap-2">
+                                  {[
+                                    { label: "参加", val: summary.attended, color: "text-emerald-600" },
+                                    { label: "不参加", val: summary.absent, color: "text-rose-600" },
+                                    { label: "遅れ", val: summary.undecided, color: "text-amber-600" },
+                                    { label: "未回答", val: summary.unanswered, color: "text-muted-foreground" }
+                                  ].map((s) => (
+                                    <div key={s.label} className="text-center p-2 rounded-lg bg-muted/30">
+                                      <div className={`text-lg font-bold ${s.color}`}>{s.val}</div>
+                                      <div className="text-[10px] text-muted-foreground">{s.label}</div>
                                     </div>
-                                    <div className="text-xs text-muted-foreground mt-1">参加</div>
-                                  </div>
-                                  <div className="text-center p-3 rounded-lg bg-rose-50 dark:bg-rose-950">
-                                    <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                                      {summary.absent}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">不参加</div>
-                                  </div>
-                                  <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950">
-                                    <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                                      {summary.undecided}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">遅れる</div>
-                                  </div>
-                                  <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
-                                    <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                                      {summary.unanswered}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">未回答</div>
-                                  </div>
+                                  ))}
                                 </div>
-
                                 {unanswered.length > 0 && (
-                                  <div className="p-3 rounded-lg bg-muted/50">
-                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                                      未回答者 ({unanswered.length}名)
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                      {unanswered.map((member) => (
-                                        <Badge key={member.id} variant="secondary" className="text-xs">
-                                          {member.name}
-                                        </Badge>
-                                      ))}
+                                  <div className="text-xs p-3 rounded bg-muted/50">
+                                    <span className="font-bold block mb-1">未回答者 ({unanswered.length}):</span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {unanswered.map(m => <Badge key={m.id} variant="secondary" className="text-[10px]">{m.name}</Badge>)}
                                     </div>
                                   </div>
                                 )}
-
-                                {/* 未回答者促促パネル */}
-                                <UnansweredPanel event={event} responses={responses.filter((r) => r.eventId === event.id)} />
-
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-3">回答詳細</h4>
-                                  <div className="space-y-2">
-                                    {members.map((member) => {
-                                      const response = responses.find(
-                                        (r) => r.eventId === event.id && r.memberId === member.id
-                                      );
-                                      const status: ResponseStatus = response?.status || "未回答";
-                                      return (
-                                        <div
-                                          key={member.id}
-                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-muted/30"
-                                        >
-                                          <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-sm truncate">
-                                              {member.name}
-                                              <span className="text-xs text-muted-foreground ml-2">
-                                                ({member.committee})
-                                              </span>
-                                            </div>
-                                            {response?.reason && (
-                                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                                理由: {response.reason}
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className="shrink-0">
-                                            {getStatusBadge(status)}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                                <UnansweredPanel event={event} responses={responses.filter(r => r.eventId === event.id)} />
                               </CardContent>
                             </Card>
                           );
                         })}
-
-                        {/* ページネーション */}
                         {totalPages > 1 && (
                           <div className="mt-6">
                             <Pagination>
                               <PaginationContent>
-                                <PaginationItem>
-                                  <PaginationPrevious
-                                    onClick={() => handleEventPageChange(Math.max(1, eventCurrentPage - 1))}
-                                    className={eventCurrentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                  />
-                                </PaginationItem>
+                                <PaginationItem><PaginationPrevious onClick={() => handleEventPageChange(Math.max(1, eventCurrentPage - 1))} /></PaginationItem>
                                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                  <PaginationItem key={page}>
-                                    <PaginationLink
-                                      onClick={() => handleEventPageChange(page)}
-                                      isActive={eventCurrentPage === page}
-                                      className="cursor-pointer"
-                                    >
-                                      {page}
-                                    </PaginationLink>
-                                  </PaginationItem>
+                                  <PaginationItem key={page}><PaginationLink onClick={() => handleEventPageChange(page)} isActive={eventCurrentPage === page}>{page}</PaginationLink></PaginationItem>
                                 ))}
-                                <PaginationItem>
-                                  <PaginationNext
-                                    onClick={() => handleEventPageChange(Math.min(totalPages, eventCurrentPage + 1))}
-                                    className={eventCurrentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                  />
-                                </PaginationItem>
+                                <PaginationItem><PaginationNext onClick={() => handleEventPageChange(Math.min(totalPages, eventCurrentPage + 1))} /></PaginationItem>
                               </PaginationContent>
                             </Pagination>
                           </div>
@@ -1331,186 +894,57 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="matrix" id="tab-content-matrix" className="space-y-4 animate-fade-in">
-            <Card className="border-0 shadow-sm overflow-hidden">
+          <TabsContent value="matrix" id="tab-content-matrix" className="space-y-4">
+            <Card className="border shadow-sm overflow-hidden">
               <CardHeader className="bg-muted/30">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle className="section-title">出欠マトリクス</CardTitle>
-                    <CardDescription className="mt-1">
-                      全メンバーと全予定の出欠状況一覧
-                    </CardDescription>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                      <Input
-                        placeholder="メンバーを検索..."
-                        value={memberSearchQuery}
-                        onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        className="pl-8 h-8 text-xs rounded-lg bg-card max-w-[180px]"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 bg-card px-3 py-0 rounded-xl border border-border/50 h-8">
-                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                      <Label className="text-xs font-bold label-caps text-muted-foreground whitespace-nowrap">種類</Label>
-                      <Select
-                        value={selectedEventType}
-                        onValueChange={(value) => setSelectedEventType(value as EventType | "全て")}
-                      >
-                        <SelectTrigger className="w-[110px] h-6 text-xs border-0 shadow-none focus:ring-0">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="全て">全て</SelectItem>
-                          {EVENT_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                  <CardTitle className="text-lg">出欠マトリクス</CardTitle>
+                  <div className="relative w-full sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="メンバー検索..." value={memberSearchQuery} onChange={(e) => setMemberSearchQuery(e.target.value)} className="pl-9 h-8 text-xs" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {filteredEvents.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">予定がありません</p>
-                  </div>
+                  <div className="py-12 text-center text-muted-foreground"><p>予定がありません</p></div>
                 ) : (
                   <div className="space-y-6" ref={matrixListRef}>
-                    {/* ページネーション計算 */}
                     {(() => {
-                      const filteredMembers = members.filter(m =>
-                        memberSearchQuery === "" ||
-                        m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
-                        m.committee.toLowerCase().includes(memberSearchQuery.toLowerCase())
-                      );
+                      const filteredMembers = members.filter(m => m.name.includes(memberSearchQuery) || m.committee.includes(memberSearchQuery));
                       const startIndex = (currentPage - 1) * itemsPerPage;
-                      const endIndex = startIndex + itemsPerPage;
-                      const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+                      const paginatedMembers = filteredMembers.slice(startIndex, startIndex + itemsPerPage);
                       const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
 
                       return (
                         <>
-                          {/* メンバーごとのビュー */}
                           {paginatedMembers.map((member) => (
                             <div key={member.id} className="border rounded-lg overflow-hidden">
-                              <div className="bg-muted/50 px-4 py-3 border-b">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h3 className="font-semibold text-base">{member.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{member.committee}</p>
-                                  </div>
-                                  <div className="flex gap-2 text-xs">
-                                    {(() => {
-                                      const memberResponses = responses.filter(r => r.memberId === member.id);
-                                      const attended = memberResponses.filter(r => r.status === "参加").length;
-                                      const absent = memberResponses.filter(r => r.status === "不参加").length;
-                                      const undecided = memberResponses.filter(r => r.status === "遅れる").length;
-                                      const unanswered = filteredEvents.length - memberResponses.filter(r =>
-                                        filteredEvents.some(e => e.id === r.eventId)
-                                      ).length;
-
-                                      return (
-                                        <>
-                                          {attended > 0 && (
-                                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-0">
-                                              参加 {attended}
-                                            </Badge>
-                                          )}
-                                          {absent > 0 && (
-                                            <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 border-0">
-                                              不参加 {absent}
-                                            </Badge>
-                                          )}
-                                          {undecided > 0 && (
-                                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
-                                              遅れる {undecided}
-                                            </Badge>
-                                          )}
-                                          {unanswered > 0 && (
-                                            <Badge variant="outline" className="bg-gray-50 dark:bg-gray-900">
-                                              未回答 {unanswered}
-                                            </Badge>
-                                          )}
-                                        </>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
+                              <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center">
+                                <div><span className="font-bold">{member.name}</span><span className="text-xs ml-2 text-muted-foreground">{member.committee}</span></div>
                               </div>
-                              <div className="p-4">
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                  {filteredEvents.map((event) => {
-                                    const response = responses.find(
-                                      (r) => r.eventId === event.id && r.memberId === member.id
-                                    );
-                                    const status: ResponseStatus = response?.status || "未回答";
-
-                                    return (
-                                      <div
-                                        key={event.id}
-                                        className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
-                                      >
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <h4 className="font-medium text-sm truncate">{event.title}</h4>
-                                            <Badge variant="outline" className="text-xs shrink-0">
-                                              {event.type}
-                                            </Badge>
-                                          </div>
-                                          <p className="text-xs text-muted-foreground mb-2">
-                                            {safeFormat(event.dateTime, "M/d HH:mm")}
-                                          </p>
-                                          <div className="flex items-center justify-between">
-                                            {getStatusBadge(status)}
-                                          </div>
-                                          {response?.reason && (
-                                            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                                              {response.reason}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                              <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {filteredEvents.map((event) => {
+                                  const res = responses.find(r => r.eventId === event.id && r.memberId === member.id);
+                                  return (
+                                    <div key={event.id} className="p-3 rounded border text-xs bg-card">
+                                      <div className="font-bold truncate mb-1">{event.title}</div>
+                                      <div className="flex justify-between items-center">{getStatusBadge(res?.status || "未回答")}</div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           ))}
-
-                          {/* ページネーション */}
                           {totalPages > 1 && (
                             <div className="mt-6">
                               <Pagination>
                                 <PaginationContent>
-                                  <PaginationItem>
-                                    <PaginationPrevious
-                                      onClick={() => handleMatrixPageChange(Math.max(1, currentPage - 1))}
-                                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                    />
-                                  </PaginationItem>
-                                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <PaginationItem key={page}>
-                                      <PaginationLink
-                                        onClick={() => handleMatrixPageChange(page)}
-                                        isActive={currentPage === page}
-                                        className="cursor-pointer"
-                                      >
-                                        {page}
-                                      </PaginationLink>
-                                    </PaginationItem>
+                                  <PaginationItem><PaginationPrevious onClick={() => handleMatrixPageChange(Math.max(1, currentPage - 1))} /></PaginationItem>
+                                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                                    <PaginationItem key={p}><PaginationLink onClick={() => handleMatrixPageChange(p)} isActive={currentPage === p}>{p}</PaginationLink></PaginationItem>
                                   ))}
-                                  <PaginationItem>
-                                    <PaginationNext
-                                      onClick={() => handleMatrixPageChange(Math.min(totalPages, currentPage + 1))}
-                                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                                    />
-                                  </PaginationItem>
+                                  <PaginationItem><PaginationNext onClick={() => handleMatrixPageChange(Math.min(totalPages, currentPage + 1))} /></PaginationItem>
                                 </PaginationContent>
                               </Pagination>
                             </div>
@@ -1524,169 +958,58 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* 共有リンク管理タブ */}
-          <TabsContent value="shares" id="tab-content-shares" className="space-y-4 animate-fade-in">
-            <Card className="border-0 shadow-sm overflow-hidden">
-              <CardHeader className="bg-muted/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="section-title">共有リンク管理</CardTitle>
-                    <CardDescription className="mt-1">
-                      現在有効な共有リンクの一覧と管理
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <SharedLinksList events={events} sharedResponses={sharedResponses} />
-              </CardContent>
+          <TabsContent value="shares" id="tab-content-shares" className="space-y-4">
+            <Card className="border shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30"><CardTitle className="text-lg">共有リンク管理</CardTitle></CardHeader>
+              <CardContent className="pt-6"><SharedLinksList events={events} sharedResponses={sharedResponses} /></CardContent>
             </Card>
           </TabsContent>
 
-          {/* 履歴タブ */}
-          <TabsContent value="history" id="tab-content-history" className="space-y-4 animate-fade-in">
+          <TabsContent value="history" id="tab-content-history" className="space-y-4">
             <HistoryPanel events={events} responses={responses} members={members} />
           </TabsContent>
         </Tabs>
 
-        {/* アナウンスメント作成・編集ダイアログ */}
         <AnnouncementDialog
           isOpen={isAnnouncementDialogOpen}
-          onOpenChange={(open) => {
-            setIsAnnouncementDialogOpen(open);
-            if (!open) {
-              setEditingAnnouncement(null);
-              setNewAnnouncement({ title: "", content: "", priority: "通常" });
-            }
-          }}
+          onOpenChange={(open) => { setIsAnnouncementDialogOpen(open); if (!open) setEditingAnnouncement(null); }}
           isEditing={!!editingAnnouncement}
           onSubmit={handleCreateAnnouncement}
-          onCancel={() => {
-            setEditingAnnouncement(null);
-            setNewAnnouncement({ title: "", content: "", priority: "通常" });
-          }}
+          onCancel={() => setEditingAnnouncement(null)}
         >
-          <div className="space-y-2">
-            <Label htmlFor="announcement-title">タイトル</Label>
-            <Input
-              id="announcement-title"
-              value={newAnnouncement.title}
-              onChange={(e) =>
-                setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
-              }
-              placeholder="例: 文化祭準備のお知らせ"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="announcement-priority">優先度</Label>
-            <Select
-              value={newAnnouncement.priority}
-              onValueChange={(value: AnnouncementPriority) =>
-                setNewAnnouncement({ ...newAnnouncement, priority: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ANNOUNCEMENT_PRIORITIES.map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {priority}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="announcement-content">内容</Label>
-            <Textarea
-              id="announcement-content"
-              value={newAnnouncement.content}
-              onChange={(e) =>
-                setNewAnnouncement({ ...newAnnouncement, content: e.target.value })
-              }
-              placeholder="お知らせの内容を入力してください"
-              rows={5}
-            />
+          <div className="space-y-4 py-2">
+            <div className="space-y-2"><Label>タイトル</Label><Input value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} /></div>
+            <div className="space-y-2">
+              <Label>優先度</Label>
+              <Select value={newAnnouncement.priority} onValueChange={(v: AnnouncementPriority) => setNewAnnouncement({...newAnnouncement, priority: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{ANNOUNCEMENT_PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>内容</Label><Textarea value={newAnnouncement.content} onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})} rows={5} /></div>
           </div>
         </AnnouncementDialog>
 
-        {/* 予定追加ダイアログ (カレンダー用) */}
         <AddEventDialog
           isOpen={isAddEventDialogOpen}
           onOpenChange={setIsAddEventDialogOpen}
           onSubmit={handleCreateCalendarEvent}
-          onCancel={() => {
-            setNewCalendarEvent({
-              title: "",
-              description: "",
-              date: "",
-            });
-          }}
+          onCancel={() => setNewCalendarEvent({ title: "", description: "", date: "" })}
         >
-          <div className="space-y-2">
-            <Label htmlFor="calendar-event-title">タイトル</Label>
-            <Input
-              id="calendar-event-title"
-              value={newCalendarEvent.title}
-              onChange={(e) =>
-                setNewCalendarEvent({ ...newCalendarEvent, title: e.target.value })
-              }
-              placeholder="例: 臨時集会"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="calendar-event-date">開催日</Label>
-            <Input
-              id="calendar-event-date"
-              type="date"
-              value={newCalendarEvent.date}
-              onChange={(e) =>
-                setNewCalendarEvent({ ...newCalendarEvent, date: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="calendar-event-description">説明（オプション）</Label>
-            <Textarea
-              id="calendar-event-description"
-              value={newCalendarEvent.description}
-              onChange={(e) =>
-                setNewCalendarEvent({ ...newCalendarEvent, description: e.target.value })
-              }
-              placeholder="予定の詳細などを入力"
-              rows={3}
-            />
+          <div className="space-y-4 py-2">
+            <div className="space-y-2"><Label>タイトル</Label><Input value={newCalendarEvent.title} onChange={e => setNewCalendarEvent({...newCalendarEvent, title: e.target.value})} /></div>
+            <div className="space-y-2"><Label>開催日</Label><Input type="date" value={newCalendarEvent.date} onChange={e => setNewCalendarEvent({...newCalendarEvent, date: e.target.value})} /></div>
+            <div className="space-y-2"><Label>説明（オプション）</Label><Textarea value={newCalendarEvent.description} onChange={e => setNewCalendarEvent({...newCalendarEvent, description: e.target.value})} rows={3} /></div>
           </div>
         </AddEventDialog>
 
-        {/* 共有ダイアログ */}
-        <Dialog open={!!selectedEventForShare} onOpenChange={(open) => {
-          if (!open) setSelectedEventForShare(null);
-        }}>
-          <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] p-4 sm:p-6 flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="text-lg sm:text-xl flex items-center gap-2">
-                <Share2 className="w-5 h-5 flex-shrink-0" />
-                <span className="line-clamp-1">{selectedEventForShare?.title || ""}の共有</span>
-              </DialogTitle>
-              <DialogDescription className="text-sm sm:text-base">
-                このイベントへの回答フォームを共有できます
-              </DialogDescription>
+        <Dialog open={!!selectedEventForShare} onOpenChange={open => { if (!open) setSelectedEventForShare(null); }}>
+          <DialogContent className="w-[95vw] sm:max-w-2xl p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" />{selectedEventForShare?.title}の共有</DialogTitle>
+              <DialogDescription>このイベントへの回答フォームを共有できます</DialogDescription>
             </DialogHeader>
-            {selectedEventForShare && (
-              <div className="flex-1 overflow-y-auto">
-                <SharePanel
-                  event={selectedEventForShare}
-                  onShareCreated={() => {
-                    // 必要に応じて更新処理
-                  }}
-                  onShareDeleted={() => {
-                    // 必要に応じて更新処理
-                  }}
-                />
-              </div>
-            )}
+            {selectedEventForShare && <SharePanel event={selectedEventForShare} onShareCreated={()=>{}} onShareDeleted={()=>{}} />}
           </DialogContent>
         </Dialog>
       </div>

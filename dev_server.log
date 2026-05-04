@@ -1,0 +1,59 @@
+
+> shs-sei-check-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1086ms
+○ Compiling / ...
+ GET / 200 in 4.8s (compile: 4.4s, render: 344ms)
+ GET / 200 in 250ms (compile: 12ms, render: 239ms)
+ GET /offline 200 in 1082ms (compile: 925ms, render: 157ms)
+ GET /api/events 200 in 3.0s (compile: 2.6s, render: 362ms)
+ GET /api/google-calendar/events 200 in 866ms (compile: 289ms, render: 578ms)
+ GET / 200 in 94ms (compile: 5ms, render: 89ms)
+ GET /api/events 200 in 145ms (compile: 3ms, render: 142ms)
+ GET / 200 in 180ms (compile: 8ms, render: 172ms)
+ GET /offline 200 in 183ms (compile: 34ms, render: 150ms)
+ GET /api/google-calendar/events 200 in 158ms (compile: 5ms, render: 153ms)
+○ Compiling /member/[id] ...
+ GET /member/1 200 in 6.9s (compile: 6.8s, render: 149ms)
+ GET /admin 200 in 4.8s (compile: 3.7s, render: 1125ms)
+ GET / 200 in 70ms (compile: 4ms, render: 67ms)
+ GET /api/events 200 in 86ms (compile: 2ms, render: 84ms)
+ GET /api/google-calendar/events 200 in 519ms (compile: 366ms, render: 153ms)
+○ Compiling /teacher ...
+ GET /teacher 200 in 7.9s (compile: 7.4s, render: 522ms)
+ GET /api/google-calendar/events 200 in 351ms (compile: 15ms, render: 337ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 184ms (compile: 3ms, render: 181ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 152ms (compile: 3ms, render: 148ms)
+ GET /api/announcements 200 in 792ms (compile: 602ms, render: 191ms)
+ GET / 200 in 82ms (compile: 5ms, render: 77ms)
+ GET / 200 in 124ms (compile: 3ms, render: 122ms)
+ GET /offline 200 in 80ms (compile: 5ms, render: 75ms)
+ GET /api/events 200 in 561ms (compile: 4ms, render: 557ms)
+ GET /api/google-calendar/events 200 in 144ms (compile: 2ms, render: 142ms)
+ GET /member/1 200 in 91ms (compile: 53ms, render: 38ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 130ms (compile: 3ms, render: 127ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 94ms (compile: 2ms, render: 92ms)
+ GET / 200 in 90ms (compile: 5ms, render: 85ms)
+ GET /teacher 200 in 148ms (compile: 12ms, render: 136ms)
+ GET /api/events 200 in 129ms (compile: 11ms, render: 118ms)
+ GET / 200 in 119ms (compile: 8ms, render: 111ms)
+ GET /offline 200 in 116ms (compile: 42ms, render: 75ms)
+ GET /api/google-calendar/events 200 in 125ms (compile: 1976µs, render: 123ms)
+ GET /api/announcements 200 in 139ms (compile: 3ms, render: 136ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 105ms (compile: 3ms, render: 102ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 95ms (compile: 2ms, render: 93ms)
+ GET / 200 in 81ms (compile: 5ms, render: 76ms)
+ GET /teacher 200 in 117ms (compile: 9ms, render: 108ms)
+ GET /api/events 200 in 149ms (compile: 10ms, render: 138ms)
+ GET / 200 in 169ms (compile: 5ms, render: 164ms)
+ GET /offline 200 in 169ms (compile: 25ms, render: 144ms)
+ GET /api/google-calendar/events 200 in 170ms (compile: 8ms, render: 161ms)
+ GET /api/announcements 200 in 181ms (compile: 4ms, render: 177ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 114ms (compile: 3ms, render: 111ms)
+ GET /api/google-calendar/events?year=2026&month=5&calendarId=c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com%2Cc_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com 200 in 105ms (compile: 5ms, render: 100ms)

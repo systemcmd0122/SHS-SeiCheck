@@ -207,7 +207,7 @@ export function UnansweredPanel({ event, responses }: UnansweredPanelProps) {
                 <div className="ml-10">
                     <Button
                         className={cn(
-                            "w-full rounded-xl shadow-sm h-10 font-bold text-xs transition-all",
+                            "w-full rounded-lg shadow-sm h-10 font-bold text-xs transition-all",
                             isOverdue 
                                 ? "bg-rose-600 hover:bg-rose-700 text-white" 
                                 : "bg-amber-600 hover:bg-amber-700 text-white"

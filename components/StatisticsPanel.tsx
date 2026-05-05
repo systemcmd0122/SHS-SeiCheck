@@ -86,7 +86,7 @@ export function StatisticsPanel({ events, responses }: StatisticsProps) {
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">出欠状況の分析と可視化</p>
                 </div>
-                <Button onClick={exportToCSV} className="gap-2 rounded-xl shadow-sm">
+                <Button onClick={exportToCSV} className="gap-2 rounded-lg shadow-sm">
                     <Download className="w-4 h-4" />
                     CSV エクスポート
                 </Button>

@@ -50,7 +50,7 @@ export function Toaster() {
       {messages.map((msg) => (
         <div
           key={msg.id}
-          className={`pointer-events-auto flex items-start gap-4 p-5 rounded-[1.5rem] border shadow-premium animate-in slide-in-from-right-10 fade-in duration-300 transition-all backdrop-blur-xl ${
+          className={`pointer-events-auto flex items-start gap-4 p-5 rounded-[1.5rem] border shadow-sm ${
             msg.type === "success"
               ? "border-emerald-500/20 bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-50"
               : msg.type === "error"
@@ -60,7 +60,7 @@ export function Toaster() {
               : "border-primary/20 bg-background/95 dark:bg-card/90"
           }`}
         >
-          <div className={`shrink-0 p-2 rounded-2xl ${
+          <div className={`shrink-0 p-2 rounded-lg ${
              msg.type === "success" ? "bg-emerald-500/10" :
              msg.type === "error" ? "bg-rose-500/10" :
              msg.type === "warning" ? "bg-amber-500/10" : "bg-primary/10"
@@ -86,7 +86,7 @@ export function Toaster() {
           </div>
           <button
             onClick={() => removeMessage(msg.id)}
-            className="shrink-0 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors active-scale"
+            className="shrink-0 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
           >
             <X className="w-4 h-4 opacity-40" />
           </button>

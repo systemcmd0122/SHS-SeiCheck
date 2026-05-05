@@ -158,11 +158,11 @@ export function TeacherChatPanel({ events }: TeacherChatPanelProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gradient-to-br from-background to-background/80 rounded-lg border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex flex-col h-full bg-background rounded-lg border border-border overflow-hidden shadow-sm">
             {/* ── ヘッダー ── */}
-            <div className="border-b border-border px-4 py-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-600/20 dark:to-purple-600/20 flex items-center justify-between shrink-0">
+            <div className="border-b border-border px-4 py-3 bg-muted/30 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground flex-shrink-0 shadow-sm">
                         <Sparkles className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
@@ -201,27 +201,12 @@ export function TeacherChatPanel({ events }: TeacherChatPanelProps) {
                         <div
                             key={idx}
                             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                            style={{
-                                animation: `fadeIn 0.3s ease-in-out`,
-                            }}
                         >
-                            <style>{`
-                                @keyframes fadeIn {
-                                    from {
-                                        opacity: 0;
-                                        transform: translateY(8px);
-                                    }
-                                    to {
-                                        opacity: 1;
-                                        transform: translateY(0);
-                                    }
-                                }
-                            `}</style>
                             <div
                                 className={`
                                     max-w-[85%] px-4 py-2.5 rounded-lg text-sm
                                     ${msg.role === "user"
-                                        ? "bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-br-none shadow-sm"
+                                        ? "bg-primary text-primary-foreground rounded-br-none shadow-sm"
                                         : "bg-card border border-border text-foreground rounded-bl-none shadow-sm"
                                     }
                                 `}
@@ -404,7 +389,7 @@ export function TeacherChatPanel({ events }: TeacherChatPanelProps) {
                     <Button
                         onClick={() => handleSendMessage()}
                         disabled={isLoading || !inputMessage.trim()}
-                        className="shrink-0 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800"
+                        className="shrink-0"
                         size="icon"
                     >
                         {isLoading ? (

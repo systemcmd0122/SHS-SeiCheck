@@ -67,7 +67,7 @@ const COLORS = {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-gray-200 dark:border-slate-700 shadow-lg">
+            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-gray-200 dark:border-slate-700 shadow-sm">
                 <p className="text-gray-900 dark:text-gray-100 text-sm font-medium">{label}</p>
                 {payload.map((entry: any, index: number) => (
                     <p key={`item-${index}`} style={{ color: entry.color }} className="text-sm">
@@ -120,7 +120,7 @@ export function AttendanceChart({ data, title = "出欠状況" }: AttendanceChar
                         <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                 </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-6 mt-8 p-4 bg-muted/20 rounded-xl">
+                <div className="grid grid-cols-2 gap-6 mt-8 p-4 bg-muted/20 rounded-lg">
                     <div className="text-center border-r border-border/50">
                         <p className="text-xs label-caps text-muted-foreground mb-1">参加率</p>
                         <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -242,7 +242,7 @@ export function DetailedStatistics({ title, stats }: DetailedStatsProps) {
             <CardContent className="pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     {stats.map((stat, index) => (
-                        <div key={index} className="p-5 rounded-2xl bg-muted/40 card-hover transition-all">
+                        <div key={index} className="p-5 rounded-lg bg-muted/40 card-hover transition-all">
                             <div className="flex items-center gap-3 mb-3">
                                 {stat.icon && <div className="text-primary">{stat.icon}</div>}
                                 <p className="text-xs label-caps text-muted-foreground">{stat.label}</p>
@@ -304,7 +304,7 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
                             <FileText className="w-3.5 h-3.5" />
                             詳細情報
                         </h4>
-                        <div className="space-y-3 bg-muted/20 p-4 rounded-xl text-sm">
+                        <div className="space-y-3 bg-muted/20 p-4 rounded-lg text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">回答期限</span>
                                 <span className="font-medium">{format(new Date(event.deadline), "MM/dd HH:mm", { locale: ja })}</span>
@@ -327,19 +327,19 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
                             回答状況
                         </h4>
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
                                 <span className="text-xs text-emerald-700 dark:text-emerald-400 block mb-1">参加</span>
                                 <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{statistics.attended}人</span>
                             </div>
-                            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-100 dark:border-amber-900/50">
+                            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-100 dark:border-amber-900/50">
                                 <span className="text-xs text-amber-700 dark:text-amber-400 block mb-1">遅刻</span>
                                 <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{statistics.delayed}人</span>
                             </div>
-                            <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50">
+                            <div className="bg-rose-50 dark:bg-rose-950/30 p-3 rounded-lg border border-rose-100 dark:border-rose-900/50">
                                 <span className="text-xs text-rose-700 dark:text-rose-400 block mb-1">不参加</span>
                                 <span className="text-xl font-bold text-rose-600 dark:text-rose-400">{statistics.absent}人</span>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                            <div className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg border border-slate-100 dark:border-slate-800/50">
                                 <span className="text-xs text-slate-500 block mb-1">未回答</span>
                                 <span className="text-xl font-bold text-slate-500">{statistics.unanswered}人</span>
                             </div>
@@ -349,19 +349,19 @@ export function EventDetailPanel({ event, statistics }: EventDetailProps) {
 
                 <div className="pt-6 border-t border-border/50">
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-4 bg-primary/5 rounded-2xl">
+                        <div className="text-center p-4 bg-primary/5 rounded-lg">
                             <p className="text-xs label-caps text-muted-foreground mb-1">回答率</p>
                             <p className="text-2xl font-bold text-primary">
                                 {total > 0 ? ((responseCount / total) * 100).toFixed(1) : 0}%
                             </p>
                         </div>
-                        <div className="text-center p-4 bg-emerald-500/5 rounded-2xl">
+                        <div className="text-center p-4 bg-emerald-500/5 rounded-lg">
                             <p className="text-xs label-caps text-muted-foreground mb-1">出席率</p>
                             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                                 {responseCount > 0 ? (((statistics.attended + statistics.delayed) / responseCount) * 100).toFixed(1) : 0}%
                             </p>
                         </div>
-                        <div className="text-center p-4 bg-rose-500/5 rounded-2xl">
+                        <div className="text-center p-4 bg-rose-500/5 rounded-lg">
                             <p className="text-xs label-caps text-muted-foreground mb-1">不参加率</p>
                             <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
                                 {responseCount > 0 ? ((statistics.absent / responseCount) * 100).toFixed(1) : 0}%

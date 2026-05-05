@@ -83,10 +83,10 @@
   /* Standardized Spacing & Grid */
   --spacing-unit: 4px;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-premium: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .dark {
@@ -117,7 +117,11 @@
   --sidebar-border: oklch(0.22 0.01 0);
   --sidebar-ring: oklch(0.65 0.18 264);
 
-  --shadow-premium: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 2px 4px 0 rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 2px 4px 0 rgb(0 0 0 / 0.3);
+  --shadow-premium: 0 2px 4px 0 rgb(0 0 0 / 0.3);
 }
 
 @layer base {
@@ -131,11 +135,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* スムーズスクロール */
-  html {
-    scroll-behavior: smooth;
-  }
-
   /* スクロールバーのスタイリング */
   ::-webkit-scrollbar {
     width: 6px;
@@ -147,7 +146,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted/50 rounded-full hover:bg-muted-foreground/30 transition-colors;
+    @apply bg-muted/50 rounded-full hover:bg-muted-foreground/30;
   }
 
   /* フォーカススタイル */

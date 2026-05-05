@@ -216,7 +216,7 @@ export function EventCalendar({
                             return (
                                 <div
                                     key={`${wi}-${di}`}
-                                    className={`h-[80px] sm:h-[110px] w-full p-1 sm:p-1.5 rounded-xl border transition-all overflow-hidden flex flex-col group ${!day ? "bg-muted/5 opacity-30" : isHighlighted ? "border-amber-400 bg-amber-50 shadow-md hover:shadow-lg dark:border-amber-700 dark:bg-amber-900/30" : isToday ? "border-primary bg-primary/5 shadow-inner dark:bg-primary/10" : "border-muted bg-card hover:border-primary/40 dark:bg-slate-800/50"} ${(hasEvents || day) ? "cursor-pointer active:scale-95" : ""}`}
+                                    className={`h-[80px] sm:h-[110px] w-full p-1 sm:p-1.5 rounded-lg border transition-all overflow-hidden flex flex-col group ${!day ? "bg-muted/5 opacity-30" : isHighlighted ? "border-amber-400 bg-amber-50 shadow-md hover:shadow-sm dark:border-amber-700 dark:bg-amber-900/30" : isToday ? "border-primary bg-primary/5 shadow-inner dark:bg-primary/10" : "border-muted bg-card hover:border-primary/40 dark:bg-slate-800/50"} ${(hasEvents || day) ? "cursor-pointer active:scale-95" : ""}`}
                                     onClick={() => {
                                         if (day) setSelectedDate(day);
                                     }}
@@ -286,7 +286,7 @@ export function EventCalendar({
             </Card>
             {/* 日付詳細ダイアログ */}
             <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
-                <DialogContent className="w-[92vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-3xl border-none shadow-2xl">
+                <DialogContent className="w-[92vw] sm:max-w-2xl md:max-w-3xl max-h-[85vh] flex flex-col p-6 rounded-lg border-none shadow-sm">
                     <DialogHeader className="flex-shrink-0 space-y-1">
                         <DialogTitle className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary uppercase">
                             {safeFormat(selectedDate, "M月d日 (E)")}
@@ -310,7 +310,7 @@ export function EventCalendar({
                                         {attendanceEvents.map((event) => (
                                             <div
                                                 key={event.id}
-                                                className={`group p-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 dark:border-emerald-900/30 dark:bg-emerald-950/20 ${onEventClick ? 'hover:shadow-lg hover:bg-emerald-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-emerald-900/40' : ''}`}
+                                                className={`group p-4 rounded-lg border border-emerald-100 bg-emerald-50/30 dark:border-emerald-900/30 dark:bg-emerald-950/20 ${onEventClick ? 'hover:shadow-sm hover:bg-emerald-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-emerald-900/40' : ''}`}
                                                 onClick={() => {
                                                     onEventClick?.(event);
                                                     setSelectedDate(null);
@@ -349,7 +349,7 @@ export function EventCalendar({
                                         {calendarEvents.map((event) => (
                                             <div
                                                 key={event.id}
-                                                className={`group p-4 rounded-2xl border border-blue-100 bg-blue-50/30 dark:border-blue-900/30 dark:bg-blue-950/20 ${onEventClick ? 'hover:shadow-lg hover:bg-blue-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-blue-900/40' : ''}`}
+                                                className={`group p-4 rounded-lg border border-blue-100 bg-blue-50/30 dark:border-blue-900/30 dark:bg-blue-950/20 ${onEventClick ? 'hover:shadow-sm hover:bg-blue-50 cursor-pointer transition-all active:scale-[0.98] dark:hover:bg-blue-900/40' : ''}`}
                                                 onClick={() => {
                                                     onEventClick?.(event);
                                                     setSelectedDate(null);
@@ -403,7 +403,7 @@ export function EventCalendar({
                                     {selectedDateGoogleEvents.map((event) => (
                                         <div
                                             key={event.id}
-                                            className="p-4 rounded-2xl border border-muted bg-muted/20"
+                                            className="p-4 rounded-lg border border-muted bg-muted/20"
                                         >
                                             <h4 className="font-bold text-sm sm:text-base break-words">{event.title}</h4>
                                             {event.description && (

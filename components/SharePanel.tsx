@@ -200,7 +200,7 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
                         このイベントへの回答フォームを共有できます
                     </p>
                 </div>
-                <Button onClick={handleCreateShare} disabled={isCreatingShare} className="gap-2 rounded-xl shadow-md">
+                <Button onClick={handleCreateShare} disabled={isCreatingShare} className="gap-2 rounded-lg shadow-md">
                     <LinkIcon className="w-4 h-4" />
                     新しいリンクを生成
                 </Button>
@@ -263,7 +263,7 @@ export function SharePanel({ event, onShareCreated, onShareDeleted }: SharePanel
                                             size="sm"
                                             variant={copiedMessage === share.shareToken ? "default" : "outline"}
                                             onClick={() => handleCopyShareMessage(share.shareToken)}
-                                            className="w-full gap-2 h-10 rounded-xl font-bold transition-all"
+                                            className="w-full gap-2 h-10 rounded-lg font-bold transition-all"
                                         >
                                             <MessageCircle className="w-4 h-4" />
                                             <span className="text-xs">{copiedMessage === share.shareToken ? "メッセージをコピーしました" : "テンプレートをコピー"}</span>

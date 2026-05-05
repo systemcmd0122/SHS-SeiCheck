@@ -129,7 +129,7 @@ export function MemberSelectionPage({
     return (
         <div className="flex min-h-[100dvh] items-center justify-center bg-background p-4 sm:p-8">
             <Dialog open={showContinueDialog} onOpenChange={setShowContinueDialog}>
-                <DialogContent className="w-[92vw] sm:max-w-md p-6 rounded-xl border shadow-md">
+                <DialogContent className="w-[92vw] sm:max-w-md p-6 rounded-lg border shadow-md">
                     <DialogHeader className="space-y-3">
                         <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                             <UserCircle className="w-8 h-8 text-primary" />
@@ -174,7 +174,7 @@ export function MemberSelectionPage({
             </Dialog>
 
             {showAdminButton && (
-                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background/80 backdrop-blur-sm p-1 rounded-full border shadow-sm">
+                <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-background p-1 rounded-full border shadow-sm">
                     <Button
                         onClick={handleTeacherAccess}
                         variant="ghost"
@@ -209,7 +209,7 @@ export function MemberSelectionPage({
 
             <div className="w-full max-w-md space-y-6">
                 <div className="text-center space-y-3">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary shadow-md mb-2">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-primary shadow-md mb-2">
                         <UserCircle className="w-10 h-10 text-primary-foreground" />
                     </div>
                     <div className="space-y-1">
@@ -230,7 +230,7 @@ export function MemberSelectionPage({
                 )}
 
                 {lastMember && (
-                    <Card className="rounded-xl border shadow-md overflow-hidden">
+                    <Card className="rounded-lg border shadow-md overflow-hidden">
                         <CardHeader className="pb-2 px-6 pt-6">
                             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                                 おかえりなさい
@@ -259,7 +259,7 @@ export function MemberSelectionPage({
                     </Card>
                 )}
 
-                <Card className="rounded-xl border shadow-md">
+                <Card className="rounded-lg border shadow-md">
                     <CardHeader className="space-y-1 pb-4 px-6 pt-6">
                         <CardTitle className="text-xl font-bold">新規ログイン</CardTitle>
                         <CardDescription className="text-sm">
@@ -272,7 +272,7 @@ export function MemberSelectionPage({
                                 <SelectTrigger className="h-12 text-base rounded-lg border-border bg-background">
                                     <SelectValue placeholder="名前を選択..." />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-[300px] rounded-lg shadow-lg">
+                                <SelectContent className="max-h-[300px] rounded-lg shadow-sm">
                                     {members.map((member) => (
                                         <SelectItem key={member.id} value={member.id}>
                                             <div className="flex flex-col items-start gap-0.5">

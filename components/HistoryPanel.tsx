@@ -83,7 +83,7 @@ export function HistoryPanel({ events, responses, members, logs = [] }: HistoryP
                         {memberHistory
                             .sort((a, b) => b.rate - a.rate)
                             .map((history) => (
-                                <div key={history.memberId} className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card card-hover transition-all">
+                                <div key={history.memberId} className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-card card-hover transition-all">
                                     <div className="flex-1">
                                         <h3 className="font-bold text-sm">{history.memberName}</h3>
                                         <div className="text-[10px] label-caps text-muted-foreground mt-1">
@@ -130,7 +130,7 @@ export function HistoryPanel({ events, responses, members, logs = [] }: HistoryP
                                 const unanswered = members.length - eventResponses.length;
 
                                 return (
-                                    <div key={event.id} className="p-4 rounded-xl border border-border/50 bg-card card-hover transition-all space-y-3">
+                                    <div key={event.id} className="p-4 rounded-lg border border-border/50 bg-card card-hover transition-all space-y-3">
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <h3 className="font-bold text-base">{event.title}</h3>

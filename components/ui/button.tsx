@@ -5,13 +5,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 active-scale active:brightness-95",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-bold disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 active:opacity-80",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30",
+        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
         destructive:
-          "bg-destructive text-white shadow-lg shadow-destructive/20 hover:bg-destructive/90",
+          "bg-destructive text-white shadow-sm hover:bg-destructive/90",
         outline:
           "border-2 border-border bg-background hover:bg-accent hover:text-accent-foreground dark:bg-card/50",
         secondary:
@@ -24,11 +24,11 @@ const buttonVariants = cva(
         default: "h-11 px-6 py-2 has-[>svg]:px-5",
         xs: "h-8 gap-1 rounded-lg px-3 text-xs has-[>svg]:px-2.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-9 rounded-lg gap-1.5 px-4 has-[>svg]:px-3.5",
-        lg: "h-14 rounded-2xl px-8 text-base has-[>svg]:px-6",
+        lg: "h-14 rounded-lg px-8 text-base has-[>svg]:px-6",
         icon: "size-11",
         "icon-xs": "size-8 rounded-lg [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-9 rounded-lg",
-        "icon-lg": "size-14 rounded-2xl",
+        "icon-lg": "size-14 rounded-lg",
       },
     },
     defaultVariants: {

@@ -33,8 +33,8 @@ export function OfflineIndicator() {
   if (!showIndicator) return null;
 
   return (
-    <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] transition-all duration-500 animate-in fade-in slide-in-from-bottom-4`}>
-      <div className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl shadow-premium border backdrop-blur-md ${
+    <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-[100]`}>
+      <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg shadow-sm border ${
         isOnline 
           ? "bg-emerald-50/90 border-emerald-500/20 text-emerald-900 dark:bg-emerald-950/90 dark:text-emerald-50" 
           : "bg-rose-50/90 border-rose-500/20 text-rose-900 dark:bg-rose-950/90 dark:text-rose-50"

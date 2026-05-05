@@ -7,7 +7,7 @@ export function MemberListSkeleton() {
       <Skeleton className="h-10 w-full" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex items-center gap-4 p-4 border rounded-xl">
+          <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
             <Skeleton className="h-12 w-12 rounded-full" />
             <div className="space-y-2 flex-1">
               <Skeleton className="h-4 w-[60%]" />
@@ -26,7 +26,7 @@ export function EventListSkeleton() {
       <Skeleton className="h-6 w-32" />
       <div className="space-y-2">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+          <Skeleton key={i} className="h-20 w-full rounded-lg" />
         ))}
       </div>
     </div>

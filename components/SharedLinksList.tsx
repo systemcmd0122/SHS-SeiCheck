@@ -155,7 +155,7 @@ export function SharedLinksList({ events, sharedResponses }: SharedLinksListProp
                     placeholder="リンクを検索..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="pl-9 h-11 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 transition-all"
                 />
                 <Share2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
             </div>

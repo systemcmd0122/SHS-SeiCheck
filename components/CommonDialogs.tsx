@@ -85,6 +85,43 @@ export function CommonDialog({
 }
 
 /**
+ * 予定作成ダイアログ
+ */
+interface CreateEventDialogProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    children: ReactNode;
+    onSubmit: () => void;
+    onCancel?: () => void;
+    isLoading?: boolean;
+}
+
+export function CreateEventDialog({
+    isOpen,
+    onOpenChange,
+    children,
+    onSubmit,
+    onCancel,
+    isLoading = false,
+}: CreateEventDialogProps): JSX.Element {
+    return (
+        <CommonDialog
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            title="予定を作成"
+            description="出欠確認を行う新しい予定を作成します"
+            onConfirm={onSubmit}
+            onCancel={onCancel}
+            confirmText="作成"
+            cancelText="キャンセル"
+            isLoading={isLoading}
+        >
+            {children}
+        </CommonDialog>
+    );
+}
+
+/**
  * 予定追加ダイアログ
  */
 interface AddEventDialogProps {

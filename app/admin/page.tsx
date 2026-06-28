@@ -99,7 +99,7 @@ import {
 import type { Event, Response, EventType, ResponseStatus, Announcement, AnnouncementPriority, SharedResponse } from "@/lib/types";
 import { EVENT_TYPES, ANNOUNCEMENT_PRIORITIES } from "@/lib/types";
 import { Textarea } from "@/components/ui/textarea";
-import { AnnouncementDialog, ShareLinkDialog, AddEventDialog } from "@/components/CommonDialogs";
+import { AnnouncementDialog, ShareLinkDialog, AddEventDialog, CreateEventDialog } from "@/components/CommonDialogs";
 
 import { useRouter } from "next/navigation";
 import { LoadingScreen } from "@/components/Loading";
@@ -262,8 +262,8 @@ export default function AdminPage() {
       return;
     }
 
-    if (new Date(newEvent.date) > new Date(newEvent.deadlineDate)) {
-      errorToast("入力エラー", "開催日は締切日以前の日付を選択してください");
+    if (new Date(newEvent.date) < new Date(newEvent.deadlineDate)) {
+      errorToast("入力エラー", "締切日は開催日以前の日付を選択してください");
       return;
     }
 
@@ -978,17 +978,104 @@ export default function AdminPage() {
           onCancel={() => setEditingAnnouncement(null)}
         >
           <div className="space-y-4 py-2">
-            <div className="space-y-2"><Label>タイトル</Label><Input value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} /></div>
             <div className="space-y-2">
-              <Label>優先度</Label>
+              <Label htmlFor="announcement-title">タイトル</Label>
+              <Input
+                id="announcement-title"
+                value={newAnnouncement.title}
+                onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="announcement-priority">優先度</Label>
               <Select value={newAnnouncement.priority} onValueChange={(v: AnnouncementPriority) => setNewAnnouncement({...newAnnouncement, priority: v})}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="announcement-priority"><SelectValue /></SelectTrigger>
                 <SelectContent>{ANNOUNCEMENT_PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>内容</Label><Textarea value={newAnnouncement.content} onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})} rows={5} /></div>
+            <div className="space-y-2">
+              <Label htmlFor="announcement-content">内容</Label>
+              <Textarea
+                id="announcement-content"
+                value={newAnnouncement.content}
+                onChange={e => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                rows={5}
+              />
+            </div>
           </div>
         </AnnouncementDialog>
+
+        <CreateEventDialog
+          isOpen={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreateEvent}
+          onCancel={() => setNewEvent({
+            title: "",
+            type: "定例会",
+            date: "",
+            time: "",
+            deadlineDate: "",
+          })}
+        >
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="event-title">タイトル</Label>
+              <Input
+                id="event-title"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                placeholder="例: 第1回 定例会"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event-type">種類</Label>
+              <Select
+                value={newEvent.type}
+                onValueChange={(v: EventType) => setNewEvent({ ...newEvent, type: v })}
+              >
+                <SelectTrigger id="event-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="event-date">開催日</Label>
+                <Input
+                  id="event-date"
+                  type="date"
+                  value={newEvent.date}
+                  onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="event-time">開始時間</Label>
+                <Input
+                  id="event-time"
+                  type="time"
+                  value={newEvent.time}
+                  onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="event-deadline">回答締切日</Label>
+              <Input
+                id="event-deadline"
+                type="date"
+                value={newEvent.deadlineDate}
+                onChange={(e) => setNewEvent({ ...newEvent, deadlineDate: e.target.value })}
+              />
+            </div>
+          </div>
+        </CreateEventDialog>
 
         <AddEventDialog
           isOpen={isAddEventDialogOpen}
@@ -997,9 +1084,32 @@ export default function AdminPage() {
           onCancel={() => setNewCalendarEvent({ title: "", description: "", date: "" })}
         >
           <div className="space-y-4 py-2">
-            <div className="space-y-2"><Label>タイトル</Label><Input value={newCalendarEvent.title} onChange={e => setNewCalendarEvent({...newCalendarEvent, title: e.target.value})} /></div>
-            <div className="space-y-2"><Label>開催日</Label><Input type="date" value={newCalendarEvent.date} onChange={e => setNewCalendarEvent({...newCalendarEvent, date: e.target.value})} /></div>
-            <div className="space-y-2"><Label>説明（オプション）</Label><Textarea value={newCalendarEvent.description} onChange={e => setNewCalendarEvent({...newCalendarEvent, description: e.target.value})} rows={3} /></div>
+            <div className="space-y-2">
+              <Label htmlFor="cal-event-title">タイトル</Label>
+              <Input
+                id="cal-event-title"
+                value={newCalendarEvent.title}
+                onChange={e => setNewCalendarEvent({...newCalendarEvent, title: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cal-event-date">開催日</Label>
+              <Input
+                id="cal-event-date"
+                type="date"
+                value={newCalendarEvent.date}
+                onChange={e => setNewCalendarEvent({...newCalendarEvent, date: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cal-event-desc">説明（オプション）</Label>
+              <Textarea
+                id="cal-event-desc"
+                value={newCalendarEvent.description}
+                onChange={e => setNewCalendarEvent({...newCalendarEvent, description: e.target.value})}
+                rows={3}
+              />
+            </div>
           </div>
         </AddEventDialog>
 
